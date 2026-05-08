@@ -1,0 +1,172 @@
+// Version: 1.0.0
+type Certificate__502114837 =
+  {
+    courseId : Text;
+    courseName : Text;
+    id : Text;
+    issuedAt : Timestamp__301639476;
+    userId : UserId__158757552;
+    verificationCode : Text
+  };
+type CourseCompletion__619107932 =
+  {
+    certificateId : Text;
+    completedAt : Timestamp__301639476;
+    courseId : Text;
+    userId : UserId__158757552;
+    userIdText : Text
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type GlossaryCategory__945186962 =
+  {
+    #aiml;
+    #cloud;
+    #cybersecurity;
+    #general;
+    #hardware;
+    #itSupport;
+    #networking;
+    #software
+  };
+type IcHttpHeader__934273263 = {name : Text; value : Text};
+type IcHttpRequestArgs__637775769 =
+  {
+    body : ?Blob;
+    headers : [IcHttpHeader__934273263];
+    is_replicated : ?Bool;
+    max_response_bytes : ?Nat64;
+    method : {#get; #head; #post};
+    transform :
+      ?{
+         context : Blob;
+         function :
+           shared query {
+                          context : Blob;
+                          response :
+                            {
+                              body : Blob;
+                              headers : [IcHttpHeader__934273263];
+                              status : Nat
+                            }
+                        } ->
+             async
+               {
+                 body : Blob;
+                 headers : [IcHttpHeader__934273263];
+                 status : Nat
+               }
+       };
+    url : Text
+  };
+type IcHttpResult__704189131 =
+  {body : Blob; headers : [IcHttpHeader__934273263]; status : Nat};
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
+type ModuleProgress__548788064 =
+  {completed : Bool; completedAt : ?Timestamp__301639476; moduleId : Nat};
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type QuizAttempt__529564763 =
+  {
+    attemptedAt : Timestamp__301639476;
+    score : Nat;
+    totalQuestions : Nat;
+    userId : UserId__158757552
+  };
+type QuizOption__313865416 = {id : Nat; text : Text};
+type QuizQuestion__692474474 =
+  {
+    correctOptionId : Nat;
+    id : Nat;
+    options : [QuizOption__313865416];
+    question : Text
+  };
+type SubscriptionStatus__473694714 = {#active; #cancelled; #inactive};
+type Subscription__929711557 =
+  {
+    var expiresAt : Timestamp__301639476;
+    var razorpayOrderId : ?Text;
+    var razorpayPaymentId : ?Text;
+    var renewalDate : Timestamp__301639476;
+    var startDate : Timestamp__301639476;
+    var status : SubscriptionStatus__473694714;
+    var stripeCustomerId : Text;
+    var stripeSubscriptionId : Text;
+    userId : UserId__158757552
+  };
+type Term__240165799 =
+  {
+    category : GlossaryCategory__945186962;
+    definition : Text;
+    example : Text;
+    id : Nat;
+    term : Text
+  };
+type Timestamp__301639476 = Int;
+type UserId__158757552 = Principal;
+type UserProgress__481995947 =
+  {
+    lastQuizAttemptedAt : ?Timestamp__301639476;
+    lastQuizScore : ?Nat;
+    moduleProgress : [ModuleProgress__548788064];
+    totalLearningHours : Nat;
+    userId : UserId__158757552
+  };
+actor {
+  stable certificateMap :
+    {
+      var root : Node__46230540<Text, Certificate__502114837>;
+      var size : Nat__490723111
+    };
+  stable courseCompletions :
+    {
+      var root :
+        Node__46230540<Text, List__415060402<CourseCompletion__619107932>>;
+      var size : Nat__490723111
+    };
+  stable management :
+    actor {
+      http_request :
+        shared IcHttpRequestArgs__637775769 -> async IcHttpResult__704189131
+    };
+  stable owner : {var principal : ?UserId__158757552};
+  stable progressMap :
+    {
+      var root : Node__46230540<UserId__158757552, UserProgress__481995947>;
+      var size : Nat__490723111
+    };
+  stable quizAttempts :
+    {
+      var root : Node__46230540<UserId__158757552, QuizAttempt__529564763>;
+      var size : Nat__490723111
+    };
+  stable quizQuestions : [QuizQuestion__692474474];
+  stable razorpayKeys : {var keyId : Text; var keySecret : Text};
+  stable signupMap :
+    {
+      var root : Node__46230540<UserId__158757552, Timestamp__301639476>;
+      var size : Nat__490723111
+    };
+  stable subscriptions :
+    {
+      var root : Node__46230540<UserId__158757552, Subscription__929711557>;
+      var size : Nat__490723111
+    };
+  stable terms :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Term__240165799]];
+      var elementIndex : Nat__490723111
+    }
+};

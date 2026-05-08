@@ -1,0 +1,356 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: "General Sans", sans-serif;
+    --font-body: "Figtree", sans-serif;
+    --font-mono: "Geist Mono", monospace;
+    --radius: 0.5rem;
+
+    --background: 0.99 0.005 260;
+    --foreground: 0.15 0.025 260;
+    --card: 1.0 0.005 260;
+    --card-foreground: 0.12 0.03 260;
+    --popover: 1.0 0.01 260;
+    --popover-foreground: 0.15 0.02 260;
+
+    --primary: 0.65 0.21 215;
+    --primary-foreground: 0.99 0.005 260;
+
+    --secondary: 0.78 0.17 85;
+    --secondary-foreground: 0.15 0.03 260;
+    --muted: 0.94 0.015 260;
+    --muted-foreground: 0.5 0.02 260;
+
+    --accent: 0.26 0.09 260;
+    --accent-foreground: 0.99 0.005 260;
+
+    --destructive: 0.58 0.22 25;
+    --destructive-foreground: 0.98 0.01 260;
+
+    --border: 0.91 0.01 260;
+    --input: 0.92 0.02 260;
+    --ring: 0.65 0.19 215;
+
+    --chart-1: 0.65 0.19 215;
+    --chart-2: 0.78 0.15 85;
+    --chart-3: 0.52 0.18 170;
+    --chart-4: 0.68 0.16 45;
+    --chart-5: 0.4 0.14 300;
+
+    --sidebar: 0.97 0.008 260;
+    --sidebar-foreground: 0.15 0.025 260;
+    --sidebar-primary: 0.65 0.21 215;
+    --sidebar-primary-foreground: 0.98 0.01 260;
+    --sidebar-accent: 0.88 0.02 260;
+    --sidebar-accent-foreground: 0.2 0.03 260;
+    --sidebar-border: 0.88 0.02 260;
+    --sidebar-ring: 0.65 0.19 215;
+
+    /* Section accents for major navigation */
+    --corporate-accent: 0.72 0.16 80;
+    --platform-accent: 0.62 0.18 275;
+    --etl-accent: 0.58 0.18 305;
+    --capstone-accent: 0.62 0.16 145;
+
+    /* Course category colors */
+    --skill-python: 0.55 0.15 260;
+    --skill-sql: 0.68 0.17 35;
+    --skill-devops: 0.58 0.18 305;
+    --skill-cloud: 0.68 0.14 200;
+    --skill-github: 0.28 0.08 260;
+    --skill-networking: 0.65 0.17 165;
+    --skill-dsa: 0.62 0.16 145;
+    --skill-ai: 0.58 0.18 25;
+
+    /* Gamification tokens */
+    --xp-fill: 0.78 0.15 85;
+    --badge-gold: 0.78 0.16 80;
+    --confidential-stamp: 0.68 0.22 25;
+  }
+
+  .dark {
+    --background: 0.09 0.015 260;
+    --foreground: 0.96 0.01 260;
+    --card: 0.12 0.013 260;
+    --card-foreground: 0.96 0.01 260;
+    --popover: 0.14 0.015 260;
+    --popover-foreground: 0.94 0.012 260;
+
+    --primary: 0.7 0.22 215;
+    --primary-foreground: 0.09 0.015 260;
+
+    --secondary: 0.68 0.16 85;
+    --secondary-foreground: 0.96 0.01 260;
+    --muted: 0.17 0.013 260;
+    --muted-foreground: 0.6 0.014 260;
+
+    --accent: 0.17 0.013 260;
+    --accent-foreground: 0.96 0.01 260;
+
+    --destructive: 0.68 0.22 25;
+    --destructive-foreground: 0.12 0.02 260;
+
+    --border: 0.22 0.013 260;
+    --input: 0.2 0.015 260;
+    --ring: 0.7 0.2 215;
+
+    --chart-1: 0.72 0.18 215;
+    --chart-2: 0.68 0.13 85;
+    --chart-3: 0.62 0.18 170;
+    --chart-4: 0.75 0.16 45;
+    --chart-5: 0.55 0.14 300;
+
+    --sidebar: 0.14 0.015 260;
+    --sidebar-foreground: 0.95 0.015 260;
+    --sidebar-primary: 0.72 0.2 215;
+    --sidebar-primary-foreground: 0.12 0.02 260;
+    --sidebar-accent: 0.28 0.02 260;
+    --sidebar-accent-foreground: 0.85 0.08 260;
+    --sidebar-border: 0.28 0.02 260;
+    --sidebar-ring: 0.72 0.18 215;
+
+    /* Section accents for major navigation */
+    --corporate-accent: 0.75 0.15 80;
+    --platform-accent: 0.68 0.16 275;
+    --etl-accent: 0.65 0.17 305;
+    --capstone-accent: 0.68 0.15 145;
+
+    /* Course category colors */
+    --skill-python: 0.62 0.14 260;
+    --skill-sql: 0.72 0.16 35;
+    --skill-devops: 0.65 0.17 305;
+    --skill-cloud: 0.72 0.13 200;
+    --skill-github: 0.88 0.08 260;
+    --skill-networking: 0.72 0.16 165;
+    --skill-dsa: 0.68 0.15 145;
+    --skill-ai: 0.72 0.21 25;
+
+    /* Gamification tokens */
+    --xp-fill: 0.68 0.13 85;
+    --badge-gold: 0.8 0.15 80;
+    --confidential-stamp: 0.72 0.22 25;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2.5 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/95 active:bg-primary/85 transition-smooth focus:ring-2 focus:ring-primary/30;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2.5 rounded-md bg-secondary text-secondary-foreground font-semibold hover:bg-secondary/95 active:bg-secondary/85 transition-smooth focus:ring-2 focus:ring-secondary/30;
+  }
+
+  .card-elevated {
+    @apply bg-card border border-border rounded-lg shadow-md;
+  }
+
+  .badge-success {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/20 text-secondary-foreground border border-secondary/30;
+  }
+
+  .badge-progress {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary border border-primary/25;
+  }
+
+  .section-divider {
+    @apply my-8 py-8 border-t border-border;
+  }
+
+  /* Course card components */
+  .course-card {
+    @apply card-elevated hover:shadow-md transition-smooth hover:-translate-y-0.5;
+  }
+
+  .course-header {
+    @apply pb-3 border-b border-border;
+  }
+
+  .badge-category {
+    @apply inline-block px-2 py-1 rounded text-xs font-medium;
+  }
+
+  .badge-category-python {
+    @apply badge-category bg-[oklch(var(--skill-python)/0.1)] text-[oklch(var(--skill-python))];
+  }
+
+  .badge-category-sql {
+    @apply badge-category bg-[oklch(var(--skill-sql)/0.1)] text-[oklch(var(--skill-sql))];
+  }
+
+  .badge-category-devops {
+    @apply badge-category bg-[oklch(var(--skill-devops)/0.1)] text-[oklch(var(--skill-devops))];
+  }
+
+  .badge-category-cloud {
+    @apply badge-category bg-[oklch(var(--skill-cloud)/0.1)] text-[oklch(var(--skill-cloud))];
+  }
+
+  .badge-category-github {
+    @apply badge-category bg-[oklch(var(--skill-github)/0.1)] text-[oklch(var(--skill-github))];
+  }
+
+  /* Status badges */
+  .badge-free {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/15 text-secondary-foreground border border-secondary/30;
+  }
+
+  .badge-locked {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium bg-muted/40 text-muted-foreground border border-border;
+  }
+
+  .badge-subscription {
+    @apply px-3 py-1 rounded-full text-xs font-semibold bg-[oklch(var(--badge-gold)/0.15)] text-[oklch(var(--badge-gold))] border border-[oklch(var(--badge-gold)/0.3)];
+  }
+
+  .badge-confidential {
+    @apply px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider bg-[oklch(var(--confidential-stamp)/0.15)] text-[oklch(var(--confidential-stamp))] border border-[oklch(var(--confidential-stamp)/0.4)];
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full bg-[oklch(var(--xp-fill))] transition-all duration-300;
+  }
+
+  /* XP display */
+  .xp-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[oklch(var(--xp-fill)/0.1)] text-[oklch(var(--xp-fill))] border border-[oklch(var(--xp-fill)/0.25)];
+  }
+
+  /* Difficulty badge */
+  .badge-difficulty-beginner {
+    @apply px-2.5 py-1 rounded text-xs font-medium bg-secondary/15 text-secondary-foreground border border-secondary/30;
+  }
+
+  .badge-difficulty-intermediate {
+    @apply px-2.5 py-1 rounded text-xs font-medium bg-primary/15 text-primary border border-primary/25;
+  }
+
+  .badge-difficulty-advanced {
+    @apply px-2.5 py-1 rounded text-xs font-medium bg-accent/15 text-accent border border-accent/30;
+  }
+
+  /* Section accent text */
+  .text-corporate {
+    color: oklch(var(--corporate-accent));
+  }
+
+  .text-platform {
+    color: oklch(var(--platform-accent));
+  }
+
+  .text-etl {
+    color: oklch(var(--etl-accent));
+  }
+
+  .text-capstone {
+    color: oklch(var(--capstone-accent));
+  }
+
+  /* Content protection warning */
+  .content-protected {
+    @apply border-2 border-[oklch(var(--confidential-stamp)/0.4)] rounded-lg p-3 bg-[oklch(var(--confidential-stamp)/0.05)];
+  }
+
+  .protection-notice {
+    @apply text-xs text-[oklch(var(--confidential-stamp))] font-medium flex items-center gap-2;
+  }
+
+  /* Navigation accent indicators */
+  .nav-item-active {
+    @apply border-l-2 border-l-primary pl-3 ml-2;
+  }
+
+  /* Level indicator */
+  .level-badge {
+    @apply flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm border border-primary/25;
+  }
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono.woff2") format("woff2");
+  font-weight: 400 500;
+  font-display: swap;
+}
+
+.prose-lesson p {
+  margin-bottom: 0.75rem;
+  line-height: 1.7;
+}
+.prose-lesson p:last-child {
+  margin-bottom: 0;
+}
+.prose-lesson strong,
+.prose-lesson b {
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+.prose-lesson em,
+.prose-lesson i {
+  font-style: italic;
+  color: #c96f1a;
+}
+.prose-lesson code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.875em;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--primary));
+  padding: 0.15em 0.4em;
+  border-radius: 0.3em;
+  border: 1px solid hsl(var(--border));
+}
+.prose-lesson ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.prose-lesson ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.prose-lesson li {
+  margin-bottom: 0.35rem;
+  line-height: 1.6;
+}
+.prose-lesson h2,
+.prose-lesson h3,
+.prose-lesson h4 {
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}

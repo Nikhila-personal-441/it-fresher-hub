@@ -1,0 +1,200 @@
+type UserProgress = 
+ record {
+   lastQuizAttemptedAt: opt Timestamp;
+   lastQuizScore: opt nat;
+   moduleProgress: vec ModuleProgress;
+   totalLearningHours: nat;
+   userId: UserId;
+ };
+type UserId = principal;
+type Timestamp = int;
+type Term = 
+ record {
+   category: GlossaryCategory;
+   definition: text;
+   example: text;
+   id: nat;
+   term: text;
+ };
+type SubscriptionView = 
+ record {
+   expiresAt: Timestamp;
+   razorpayOrderId: opt text;
+   razorpayPaymentId: opt text;
+   renewalDate: Timestamp;
+   startDate: Timestamp;
+   status: SubscriptionStatus;
+   stripeCustomerId: text;
+   stripeSubscriptionId: text;
+   userId: UserId;
+ };
+type SubscriptionStatus = 
+ variant {
+   active;
+   cancelled;
+   inactive;
+ };
+type SubscriptionStats = 
+ record {
+   activeSubscriptions: nat;
+   subscribedUsers: nat;
+   totalUsers: nat;
+ };
+type StripeWebhookPayload = 
+ record {
+   eventType: text;
+   stripeCustomerId: text;
+   stripeSubscriptionId: text;
+   userId: opt UserId;
+ };
+type RazorpayOrderResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type QuizQuestion = 
+ record {
+   correctOptionId: nat;
+   id: nat;
+   options: vec QuizOption;
+   question: text;
+ };
+type QuizOption = 
+ record {
+   id: nat;
+   "text": text;
+ };
+type QuizAttempt = 
+ record {
+   attemptedAt: Timestamp;
+   score: nat;
+   totalQuestions: nat;
+   userId: UserId;
+ };
+type ModuleProgress = 
+ record {
+   completed: bool;
+   completedAt: opt Timestamp;
+   moduleId: nat;
+ };
+type ModuleCategory = 
+ variant {
+   aiml;
+   capstonePproject;
+   cloud;
+   cloudaws;
+   corporateWorld;
+   corporateskills;
+   cybersecurity;
+   devops;
+   dsa;
+   etltools;
+   excel;
+   github;
+   hardware;
+   htmlcss;
+   itSupport;
+   itfundamentals;
+   java;
+   machinelearning;
+   mncplatforms;
+   networking;
+   presentation;
+   python;
+   shellscripting;
+   software;
+   sql;
+   trending;
+ };
+type Lesson = 
+ record {
+   description: text;
+   durationMinutes: nat;
+   title: text;
+ };
+type ITModule = 
+ record {
+   category: ModuleCategory;
+   description: text;
+   difficulty: text;
+   estimatedHours: nat;
+   estimatedMinutes: nat;
+   id: nat;
+   isComingSoon: bool;
+   lessons: vec Lesson;
+   title: text;
+   topics: vec text;
+ };
+type GlossaryCategory = 
+ variant {
+   aiml;
+   cloud;
+   cybersecurity;
+   general;
+   hardware;
+   itSupport;
+   networking;
+   software;
+ };
+type CourseCompletion = 
+ record {
+   certificateId: text;
+   completedAt: Timestamp;
+   courseId: text;
+   userId: UserId;
+   userIdText: text;
+ };
+type CertificateView = 
+ record {
+   courseId: text;
+   courseName: text;
+   id: text;
+   issuedAt: Timestamp;
+   userId: UserId;
+   verificationCode: text;
+ };
+type AdminUserView = 
+ record {
+   coursesCompleted: nat;
+   lastActiveAt: Timestamp;
+   signupAt: Timestamp;
+   subscriptionStatus: text;
+   totalProgress: float64;
+   userId: UserId;
+   userIdText: text;
+ };
+service : {
+  activateSubscriptionWithRazorpay: (orderId: text, paymentId: text) ->
+   (bool);
+  canAccessLesson: (lessonIndex: nat) -> (bool);
+  canAccessModule: (moduleIndex: nat) -> (bool);
+  checkSubscription: () -> (opt SubscriptionView);
+  createRazorpayOrder: () -> (RazorpayOrderResult);
+  getAllUsersAdmin: () -> (vec AdminUserView) query;
+  getCertificate: (id: text) -> (opt CertificateView) query;
+  getCourseCompletions: () -> (vec CourseCompletion) query;
+  getModule: (moduleId: nat) -> (opt ITModule) query;
+  getMyCertificates: () -> (vec CertificateView) query;
+  getMyProgress: () -> (UserProgress) query;
+  getMyQuizAttempt: () -> (opt QuizAttempt) query;
+  getSubscriptionStatsAdmin: () -> (SubscriptionStats) query;
+  getTerm: (termId: nat) -> (opt Term) query;
+  getTermsByCategory: (category: GlossaryCategory) -> (vec Term) query;
+  getUserProgressAdmin: (userId: UserId) -> (opt UserProgress) query;
+  handleStripeWebhook: (payload: StripeWebhookPayload) -> (bool);
+  linkStripeCustomer: (stripeCustomerId: text) -> ();
+  listGlossaryTerms: () -> (vec Term) query;
+  listModules: () -> (vec ITModule) query;
+  listQuizQuestions: () -> (vec QuizQuestion) query;
+  listSubscribers: () -> (vec SubscriptionView) query;
+  markCourseComplete: (courseId: text, courseName: text) -> (CertificateView);
+  markModuleCompleted: (moduleId: nat) -> ();
+  searchGlossary: (searchText: text) -> (vec Term) query;
+  setOwner: () -> ();
+  setRazorpayKeys: (keyId: text, keySecret: text) -> (bool);
+  submitQuizAttempt: (answers: vec record {
+                                     nat;
+                                     nat;
+                                   }) -> (QuizAttempt);
+  updateLearningHours: (hours: nat) -> ();
+}
