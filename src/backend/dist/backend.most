@@ -1,4 +1,12 @@
 // Version: 1.0.0
+type CapstoneSubscription__638267089 =
+  {
+    var activated : Bool;
+    var activatedAt : Timestamp__301639476;
+    var razorpayOrderId : ?Text;
+    var razorpayPaymentId : ?Text;
+    userId : UserId__158757552
+  };
 type Certificate__502114837 =
   {
     courseId : Text;
@@ -71,12 +79,29 @@ type List__790383201<T> =
     var blocks : [var [var ?T]];
     var elementIndex : Nat__490723111
   };
+type LoginEvent__993062766 =
+  {
+    timestamp : Timestamp__301639476;
+    userId : UserId__158757552;
+    userIdText : Text
+  };
 type ModuleProgress__548788064 =
   {completed : Bool; completedAt : ?Timestamp__301639476; moduleId : Nat};
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type PaymentRecord__684047527 =
+  {
+    amount : Nat;
+    orderId : Text;
+    paymentId : Text;
+    plan : Text;
+    status : Text;
+    timestamp : Timestamp__301639476;
+    userId : UserId__158757552;
+    userIdText : Text
+  };
 type QuizAttempt__529564763 =
   {
     attemptedAt : Timestamp__301639476;
@@ -120,10 +145,17 @@ type UserProgress__481995947 =
     lastQuizAttemptedAt : ?Timestamp__301639476;
     lastQuizScore : ?Nat;
     moduleProgress : [ModuleProgress__548788064];
+    streakDays : Nat;
     totalLearningHours : Nat;
     userId : UserId__158757552
   };
 actor {
+  stable capstones :
+    {
+      var root :
+        Node__46230540<UserId__158757552, CapstoneSubscription__638267089>;
+      var size : Nat__490723111
+    };
   stable certificateMap :
     {
       var root : Node__46230540<Text, Certificate__502114837>;
@@ -135,12 +167,24 @@ actor {
         Node__46230540<Text, List__415060402<CourseCompletion__619107932>>;
       var size : Nat__490723111
     };
+  stable loginEvents :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?LoginEvent__993062766]];
+      var elementIndex : Nat__490723111
+    };
   stable management :
     actor {
       http_request :
         shared IcHttpRequestArgs__637775769 -> async IcHttpResult__704189131
     };
   stable owner : {var principal : ?UserId__158757552};
+  stable paymentRecords :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?PaymentRecord__684047527]];
+      var elementIndex : Nat__490723111
+    };
   stable progressMap :
     {
       var root : Node__46230540<UserId__158757552, UserProgress__481995947>;

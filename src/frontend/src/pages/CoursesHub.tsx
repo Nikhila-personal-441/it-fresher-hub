@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useModules } from "@/hooks/useModules";
+import { useProgress } from "@/hooks/useProgress";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatMinutes, getCategoryColor } from "@/lib/formatters";
 import type { ITModule, ModuleCategory } from "@/types";
@@ -103,19 +104,22 @@ function CourseCard({
   index,
   isSubscribed,
   userId,
+  completedModuleIds,
 }: {
   module: ITModule;
   index: number;
   isSubscribed: boolean;
   onUpgrade?: () => void;
   userId: string;
+  completedModuleIds: Set<string>;
 }) {
   const isFeatured = FEATURED_IDS.has(module.id);
   const categoryColor = getCategoryColor(module.category);
 
-  // Per-user, per-course progress from localStorage
+  // Backend completedModules wins; fall back to localStorage
+  const isCompletedByBackend = completedModuleIds.has(module.id);
   const courseProgressKey = `courseProgress-${userId}-${module.id}`;
-  const savedPct = (() => {
+  const localPct = (() => {
     try {
       if (!userId) return 0;
       const raw = localStorage.getItem(courseProgressKey);
@@ -124,6 +128,7 @@ function CourseCard({
       return 0;
     }
   })();
+  const savedPct = isCompletedByBackend ? 100 : localPct;
 
   const isCompleted = savedPct >= 100;
   const hasProgress = savedPct > 0;
@@ -354,11 +359,13 @@ export default function CoursesHub() {
   const hasAccess = isSubscribed || isAdmin;
   const { identity } = useInternetIdentity();
   const userId = identity?.getPrincipal().toText() ?? "";
+  const { data: progressData } = useProgress();
+  const completedModuleIds = new Set(progressData?.completedModules ?? []);
 
   // One-time mount purge: remove any courseProgress or lessonProgress keys
   // written with an empty userId ("courseProgress--<id>", "lessonProgress--<id>")
   // or the explicit anon prefix. These cause false progress on first load.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount cleanup
+
   useEffect(() => {
     const allKeys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -438,9 +445,9 @@ export default function CoursesHub() {
               Get unlimited access to all 27 courses, quizzes, and skill tracks.
             </p>
             <p className="font-bold text-lg text-foreground mb-5">
-              ₹499{" "}
+              ₹199{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                / 45 days
+                / lifetime
               </span>
             </p>
             <ul className="text-xs text-muted-foreground space-y-1.5 mb-6 text-left bg-muted/40 rounded-lg p-3">
@@ -465,7 +472,7 @@ export default function CoursesHub() {
                 }}
                 data-ocid="paywall-subscribe"
               >
-                Subscribe · ₹499
+                Subscribe · ₹199
               </Button>
               <Button
                 variant="ghost"
@@ -587,6 +594,7 @@ export default function CoursesHub() {
                   isSubscribed={hasAccess}
                   onUpgrade={() => setPaywallOpen(true)}
                   userId={userId}
+                  completedModuleIds={completedModuleIds}
                 />
               ))}
             </div>
@@ -623,7 +631,7 @@ export default function CoursesHub() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Lock className="w-3 h-3" />
-                Requires ₹499 subscription after first module
+                Requires ₹199 subscription after first module
               </span>
             </div>
           )}

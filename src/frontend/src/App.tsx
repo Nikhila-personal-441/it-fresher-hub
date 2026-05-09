@@ -47,10 +47,15 @@ function PageLoader() {
 }
 
 function AdminGuard() {
+  const { loginStatus } = useInternetIdentity();
   const { isAdmin, isLoading } = useIsAdmin();
   const navigate = useNavigate({ from: "/admin" });
 
-  if (isLoading) {
+  // Still determining auth or identity state — show loader, never redirect
+  const authPending =
+    loginStatus === "idle" || loginStatus === "logging-in" || isLoading;
+
+  if (authPending) {
     return <PageLoader />;
   }
 

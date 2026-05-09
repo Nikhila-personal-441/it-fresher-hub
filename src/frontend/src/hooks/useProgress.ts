@@ -39,7 +39,7 @@ export function useProgress() {
         totalLearningHours: Number(raw.totalLearningHours),
         quizScores: [],
         lastActiveAt: BigInt(Date.now()),
-        streakDays: 0,
+        streakDays: Number(raw.streakDays),
         level: resolveLevel(completedModules.length),
       };
     },

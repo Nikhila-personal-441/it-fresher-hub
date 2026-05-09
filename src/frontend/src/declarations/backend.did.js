@@ -31,13 +31,23 @@ export const RazorpayOrderResult = IDL.Variant({
   'err' : IDL.Text,
 });
 export const AdminUserView = IDL.Record({
+  'lastLoginAt' : Timestamp,
   'userId' : UserId,
   'lastActiveAt' : Timestamp,
+  'subscriptionPlan' : IDL.Text,
   'coursesCompleted' : IDL.Nat,
+  'loginCount' : IDL.Nat,
   'subscriptionStatus' : IDL.Text,
   'signupAt' : Timestamp,
   'userIdText' : IDL.Text,
   'totalProgress' : IDL.Float64,
+});
+export const CapstoneSubscriptionView = IDL.Record({
+  'razorpayPaymentId' : IDL.Opt(IDL.Text),
+  'activated' : IDL.Bool,
+  'activatedAt' : Timestamp,
+  'userId' : UserId,
+  'razorpayOrderId' : IDL.Opt(IDL.Text),
 });
 export const CertificateView = IDL.Record({
   'id' : IDL.Text,
@@ -53,6 +63,11 @@ export const CourseCompletion = IDL.Record({
   'certificateId' : IDL.Text,
   'userIdText' : IDL.Text,
   'courseId' : IDL.Text,
+});
+export const LoginEvent = IDL.Record({
+  'userId' : UserId,
+  'timestamp' : Timestamp,
+  'userIdText' : IDL.Text,
 });
 export const Lesson = IDL.Record({
   'title' : IDL.Text,
@@ -107,6 +122,7 @@ export const ModuleProgress = IDL.Record({
 export const UserProgress = IDL.Record({
   'lastQuizScore' : IDL.Opt(IDL.Nat),
   'userId' : UserId,
+  'streakDays' : IDL.Nat,
   'moduleProgress' : IDL.Vec(ModuleProgress),
   'lastQuizAttemptedAt' : IDL.Opt(Timestamp),
   'totalLearningHours' : IDL.Nat,
@@ -117,9 +133,22 @@ export const QuizAttempt = IDL.Record({
   'totalQuestions' : IDL.Nat,
   'attemptedAt' : Timestamp,
 });
+export const PaymentRecord = IDL.Record({
+  'status' : IDL.Text,
+  'userId' : UserId,
+  'plan' : IDL.Text,
+  'orderId' : IDL.Text,
+  'paymentId' : IDL.Text,
+  'timestamp' : Timestamp,
+  'userIdText' : IDL.Text,
+  'amount' : IDL.Nat,
+});
 export const SubscriptionStats = IDL.Record({
+  'recentSignups' : IDL.Nat,
+  'totalPayments' : IDL.Nat,
   'subscribedUsers' : IDL.Nat,
   'totalUsers' : IDL.Nat,
+  'totalRevenue' : IDL.Nat,
   'activeSubscriptions' : IDL.Nat,
 });
 export const GlossaryCategory = IDL.Variant({
@@ -154,26 +183,40 @@ export const QuizQuestion = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  'activateCapstoneWithRazorpay' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
   'activateSubscriptionWithRazorpay' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Bool],
       [],
     ),
+  'canAccessCapstone' : IDL.Func([], [IDL.Bool], []),
   'canAccessLesson' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'canAccessModule' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'checkSubscription' : IDL.Func([], [IDL.Opt(SubscriptionView)], []),
+  'createCapstoneOrder' : IDL.Func([], [RazorpayOrderResult], []),
   'createRazorpayOrder' : IDL.Func([], [RazorpayOrderResult], []),
   'getAllUsersAdmin' : IDL.Func([], [IDL.Vec(AdminUserView)], ['query']),
+  'getCapstoneSubscription' : IDL.Func(
+      [],
+      [IDL.Opt(CapstoneSubscriptionView)],
+      [],
+    ),
   'getCertificate' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(CertificateView)],
       ['query'],
     ),
   'getCourseCompletions' : IDL.Func([], [IDL.Vec(CourseCompletion)], ['query']),
+  'getLoginEvents' : IDL.Func([], [IDL.Vec(LoginEvent)], ['query']),
   'getModule' : IDL.Func([IDL.Nat], [IDL.Opt(ITModule)], ['query']),
   'getMyCertificates' : IDL.Func([], [IDL.Vec(CertificateView)], ['query']),
   'getMyProgress' : IDL.Func([], [UserProgress], ['query']),
   'getMyQuizAttempt' : IDL.Func([], [IDL.Opt(QuizAttempt)], ['query']),
+  'getPaymentRecords' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
   'getSubscriptionStatsAdmin' : IDL.Func([], [SubscriptionStats], ['query']),
   'getTerm' : IDL.Func([IDL.Nat], [IDL.Opt(Term)], ['query']),
   'getTermsByCategory' : IDL.Func(
@@ -194,6 +237,7 @@ export const idlService = IDL.Service({
   'listSubscribers' : IDL.Func([], [IDL.Vec(SubscriptionView)], ['query']),
   'markCourseComplete' : IDL.Func([IDL.Text, IDL.Text], [CertificateView], []),
   'markModuleCompleted' : IDL.Func([IDL.Nat], [], []),
+  'recordLoginEvent' : IDL.Func([], [], []),
   'searchGlossary' : IDL.Func([IDL.Text], [IDL.Vec(Term)], ['query']),
   'setOwner' : IDL.Func([], [], []),
   'setRazorpayKeys' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
@@ -231,13 +275,23 @@ export const idlFactory = ({ IDL }) => {
     'err' : IDL.Text,
   });
   const AdminUserView = IDL.Record({
+    'lastLoginAt' : Timestamp,
     'userId' : UserId,
     'lastActiveAt' : Timestamp,
+    'subscriptionPlan' : IDL.Text,
     'coursesCompleted' : IDL.Nat,
+    'loginCount' : IDL.Nat,
     'subscriptionStatus' : IDL.Text,
     'signupAt' : Timestamp,
     'userIdText' : IDL.Text,
     'totalProgress' : IDL.Float64,
+  });
+  const CapstoneSubscriptionView = IDL.Record({
+    'razorpayPaymentId' : IDL.Opt(IDL.Text),
+    'activated' : IDL.Bool,
+    'activatedAt' : Timestamp,
+    'userId' : UserId,
+    'razorpayOrderId' : IDL.Opt(IDL.Text),
   });
   const CertificateView = IDL.Record({
     'id' : IDL.Text,
@@ -253,6 +307,11 @@ export const idlFactory = ({ IDL }) => {
     'certificateId' : IDL.Text,
     'userIdText' : IDL.Text,
     'courseId' : IDL.Text,
+  });
+  const LoginEvent = IDL.Record({
+    'userId' : UserId,
+    'timestamp' : Timestamp,
+    'userIdText' : IDL.Text,
   });
   const Lesson = IDL.Record({
     'title' : IDL.Text,
@@ -307,6 +366,7 @@ export const idlFactory = ({ IDL }) => {
   const UserProgress = IDL.Record({
     'lastQuizScore' : IDL.Opt(IDL.Nat),
     'userId' : UserId,
+    'streakDays' : IDL.Nat,
     'moduleProgress' : IDL.Vec(ModuleProgress),
     'lastQuizAttemptedAt' : IDL.Opt(Timestamp),
     'totalLearningHours' : IDL.Nat,
@@ -317,9 +377,22 @@ export const idlFactory = ({ IDL }) => {
     'totalQuestions' : IDL.Nat,
     'attemptedAt' : Timestamp,
   });
+  const PaymentRecord = IDL.Record({
+    'status' : IDL.Text,
+    'userId' : UserId,
+    'plan' : IDL.Text,
+    'orderId' : IDL.Text,
+    'paymentId' : IDL.Text,
+    'timestamp' : Timestamp,
+    'userIdText' : IDL.Text,
+    'amount' : IDL.Nat,
+  });
   const SubscriptionStats = IDL.Record({
+    'recentSignups' : IDL.Nat,
+    'totalPayments' : IDL.Nat,
     'subscribedUsers' : IDL.Nat,
     'totalUsers' : IDL.Nat,
+    'totalRevenue' : IDL.Nat,
     'activeSubscriptions' : IDL.Nat,
   });
   const GlossaryCategory = IDL.Variant({
@@ -354,16 +427,28 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
+    'activateCapstoneWithRazorpay' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
     'activateSubscriptionWithRazorpay' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Bool],
         [],
       ),
+    'canAccessCapstone' : IDL.Func([], [IDL.Bool], []),
     'canAccessLesson' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'canAccessModule' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'checkSubscription' : IDL.Func([], [IDL.Opt(SubscriptionView)], []),
+    'createCapstoneOrder' : IDL.Func([], [RazorpayOrderResult], []),
     'createRazorpayOrder' : IDL.Func([], [RazorpayOrderResult], []),
     'getAllUsersAdmin' : IDL.Func([], [IDL.Vec(AdminUserView)], ['query']),
+    'getCapstoneSubscription' : IDL.Func(
+        [],
+        [IDL.Opt(CapstoneSubscriptionView)],
+        [],
+      ),
     'getCertificate' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(CertificateView)],
@@ -374,10 +459,12 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(CourseCompletion)],
         ['query'],
       ),
+    'getLoginEvents' : IDL.Func([], [IDL.Vec(LoginEvent)], ['query']),
     'getModule' : IDL.Func([IDL.Nat], [IDL.Opt(ITModule)], ['query']),
     'getMyCertificates' : IDL.Func([], [IDL.Vec(CertificateView)], ['query']),
     'getMyProgress' : IDL.Func([], [UserProgress], ['query']),
     'getMyQuizAttempt' : IDL.Func([], [IDL.Opt(QuizAttempt)], ['query']),
+    'getPaymentRecords' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
     'getSubscriptionStatsAdmin' : IDL.Func([], [SubscriptionStats], ['query']),
     'getTerm' : IDL.Func([IDL.Nat], [IDL.Opt(Term)], ['query']),
     'getTermsByCategory' : IDL.Func(
@@ -402,6 +489,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'markModuleCompleted' : IDL.Func([IDL.Nat], [], []),
+    'recordLoginEvent' : IDL.Func([], [], []),
     'searchGlossary' : IDL.Func([IDL.Text], [IDL.Vec(Term)], ['query']),
     'setOwner' : IDL.Func([], [], []),
     'setRazorpayKeys' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),

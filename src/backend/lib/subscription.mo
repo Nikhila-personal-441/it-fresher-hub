@@ -7,12 +7,13 @@ import Principal "mo:core/Principal";
 module {
   public type SubscriptionMap = Map.Map<CommonTypes.UserId, SubscriptionTypes.Subscription>;
 
-  // 45 days in nanoseconds (45 * 24 * 60 * 60 * 1_000_000_000)
-  let days45Ns : Int = 3_888_000_000_000_000;
+  // Lifetime expiry: year 2099 in nanoseconds since Unix epoch
+  // (4_070_908_800 seconds * 1_000_000_000 ns/s)
+  let lifetimeExpiresAt : Int = 4_070_908_800_000_000_000;
 
   // Returns true if:
   //   - moduleIndex == 0 (first module is always free), OR
-  //   - user has an active subscription that has not expired (within 45-day window)
+  //   - user has an active (lifetime) base subscription
   public func canAccessModule(
     subscriptions : SubscriptionMap,
     userId : CommonTypes.UserId,
@@ -26,9 +27,7 @@ module {
     };
     if (moduleIndex == 0) { return true };
     switch (subscriptions.get(userId)) {
-      case (?sub) {
-        sub.status == #active and Time.now() < sub.expiresAt
-      };
+      case (?sub) { sub.status == #active };
       case null { false };
     };
   };
@@ -47,10 +46,84 @@ module {
     };
     if (lessonIndex < 2) { return true };
     switch (subscriptions.get(userId)) {
-      case (?sub) {
-        sub.status == #active and Time.now() < sub.expiresAt
-      };
+      case (?sub) { sub.status == #active };
       case null { false };
+    };
+  };
+
+  public type CapstoneMap = Map.Map<CommonTypes.UserId, SubscriptionTypes.CapstoneSubscription>;
+
+  // Returns true if the user has the capstone add-on (or is admin)
+  public func canAccessCapstone(
+    subscriptions : SubscriptionMap,
+    capstones : CapstoneMap,
+    userId : CommonTypes.UserId,
+    ownerPrincipal : ?CommonTypes.UserId,
+  ) : Bool {
+    // Admin always gets full access
+    switch (ownerPrincipal) {
+      case (?owner) if (Principal.equal(owner, userId)) { return true };
+      case _ {};
+    };
+    // Requires base subscription AND capstone add-on
+    let hasBase = switch (subscriptions.get(userId)) {
+      case (?sub) { sub.status == #active };
+      case null { false };
+    };
+    if (not hasBase) { return false };
+    switch (capstones.get(userId)) {
+      case (?cap) { cap.activated };
+      case null { false };
+    };
+  };
+
+  // Returns capstone subscription view for a user
+  public func checkCapstoneSubscription(
+    capstones : CapstoneMap,
+    userId : CommonTypes.UserId,
+  ) : ?SubscriptionTypes.CapstoneSubscriptionView {
+    switch (capstones.get(userId)) {
+      case (?cap) { ?toCapstoneView(cap) };
+      case null { null };
+    };
+  };
+
+  // Activates capstone add-on for a user after successful Razorpay payment
+  public func activateCapstoneWithRazorpay(
+    capstones : CapstoneMap,
+    userId : CommonTypes.UserId,
+    orderId : Text,
+    paymentId : Text,
+  ) : () {
+    let now = Time.now();
+    switch (capstones.get(userId)) {
+      case (?cap) {
+        cap.activated := true;
+        cap.activatedAt := now;
+        cap.razorpayPaymentId := ?paymentId;
+        cap.razorpayOrderId := ?orderId;
+      };
+      case null {
+        let cap : SubscriptionTypes.CapstoneSubscription = {
+          userId = userId;
+          var activated = true;
+          var activatedAt = now;
+          var razorpayPaymentId = ?paymentId;
+          var razorpayOrderId = ?orderId;
+        };
+        capstones.add(userId, cap);
+      };
+    };
+  };
+
+  // Converts internal CapstoneSubscription to shared-safe view
+  public func toCapstoneView(cap : SubscriptionTypes.CapstoneSubscription) : SubscriptionTypes.CapstoneSubscriptionView {
+    {
+      userId = cap.userId;
+      activated = cap.activated;
+      activatedAt = cap.activatedAt;
+      razorpayPaymentId = cap.razorpayPaymentId;
+      razorpayOrderId = cap.razorpayOrderId;
     };
   };
 
@@ -80,8 +153,8 @@ module {
               userId = uid;
               var status = #active;
               var startDate = now;
-              var expiresAt = now + days45Ns;
-              var renewalDate = now + days45Ns;
+              var expiresAt = lifetimeExpiresAt;
+              var renewalDate = lifetimeExpiresAt;
               var stripeCustomerId = payload.stripeCustomerId;
               var stripeSubscriptionId = payload.stripeSubscriptionId;
               var razorpayPaymentId = null;
@@ -100,8 +173,8 @@ module {
               case (?sub) {
                 let now = Time.now();
                 sub.status := #active;
-                sub.expiresAt := now + days45Ns;
-                sub.renewalDate := now + days45Ns;
+                sub.expiresAt := lifetimeExpiresAt;
+                sub.renewalDate := lifetimeExpiresAt;
                 sub.stripeSubscriptionId := payload.stripeSubscriptionId;
                 true;
               };
@@ -111,8 +184,8 @@ module {
                   userId = uid;
                   var status = #active;
                   var startDate = now;
-                  var expiresAt = now + days45Ns;
-                  var renewalDate = now + days45Ns;
+                  var expiresAt = lifetimeExpiresAt;
+                  var renewalDate = lifetimeExpiresAt;
                   var stripeCustomerId = payload.stripeCustomerId;
                   var stripeSubscriptionId = payload.stripeSubscriptionId;
                   var razorpayPaymentId = null;
@@ -129,8 +202,8 @@ module {
               if (sub.stripeCustomerId == payload.stripeCustomerId) {
                 let now = Time.now();
                 sub.status := #active;
-                sub.expiresAt := now + days45Ns;
-                sub.renewalDate := now + days45Ns;
+                sub.expiresAt := lifetimeExpiresAt;
+                sub.renewalDate := lifetimeExpiresAt;
                 sub.stripeSubscriptionId := payload.stripeSubscriptionId;
                 found := true;
               };
@@ -169,8 +242,8 @@ module {
               case (?sub) {
                 let now = Time.now();
                 sub.status := #active;
-                sub.expiresAt := now + days45Ns;
-                sub.renewalDate := now + days45Ns;
+                sub.expiresAt := lifetimeExpiresAt;
+                sub.renewalDate := lifetimeExpiresAt;
                 true;
               };
               case null { false };
@@ -182,8 +255,8 @@ module {
               if (sub.stripeCustomerId == payload.stripeCustomerId) {
                 let now = Time.now();
                 sub.status := #active;
-                sub.expiresAt := now + days45Ns;
-                sub.renewalDate := now + days45Ns;
+                sub.expiresAt := lifetimeExpiresAt;
+                sub.renewalDate := lifetimeExpiresAt;
                 found := true;
               };
             });
@@ -231,8 +304,8 @@ module {
       case (?sub) {
         sub.status := #active;
         sub.startDate := now;
-        sub.expiresAt := now + days45Ns;
-        sub.renewalDate := now + days45Ns;
+        sub.expiresAt := lifetimeExpiresAt;
+        sub.renewalDate := lifetimeExpiresAt;
         sub.razorpayPaymentId := ?paymentId;
         sub.razorpayOrderId := ?orderId;
       };
@@ -241,8 +314,8 @@ module {
           userId = userId;
           var status = #active;
           var startDate = now;
-          var expiresAt = now + days45Ns;
-          var renewalDate = now + days45Ns;
+          var expiresAt = lifetimeExpiresAt;
+          var renewalDate = lifetimeExpiresAt;
           var stripeCustomerId = "";
           var stripeSubscriptionId = "";
           var razorpayPaymentId = ?paymentId;

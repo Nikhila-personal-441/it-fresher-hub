@@ -11,7 +11,7 @@ module {
     userId : CommonTypes.UserId;
     var status : SubscriptionStatus;
     var startDate : CommonTypes.Timestamp;
-    var expiresAt : CommonTypes.Timestamp; // startDate + 45 days in nanoseconds
+    var expiresAt : CommonTypes.Timestamp; // lifetime: set to year 2099
     var renewalDate : CommonTypes.Timestamp;
     var stripeCustomerId : Text;
     var stripeSubscriptionId : Text;
@@ -28,6 +28,24 @@ module {
     renewalDate : CommonTypes.Timestamp;
     stripeCustomerId : Text;
     stripeSubscriptionId : Text;
+    razorpayPaymentId : ?Text;
+    razorpayOrderId : ?Text;
+  };
+
+  // Capstone add-on subscription (separate from base subscription)
+  public type CapstoneSubscription = {
+    userId : CommonTypes.UserId;
+    var activated : Bool;
+    var activatedAt : CommonTypes.Timestamp;
+    var razorpayPaymentId : ?Text;
+    var razorpayOrderId : ?Text;
+  };
+
+  // Shared-safe view of CapstoneSubscription for public API
+  public type CapstoneSubscriptionView = {
+    userId : CommonTypes.UserId;
+    activated : Bool;
+    activatedAt : CommonTypes.Timestamp;
     razorpayPaymentId : ?Text;
     razorpayOrderId : ?Text;
   };

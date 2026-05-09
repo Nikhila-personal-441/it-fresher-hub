@@ -17,9 +17,12 @@ import { useQuery } from "@tanstack/react-query";
 export function useIsAdmin() {
   const { loginStatus } = useInternetIdentity();
   const isAuthenticated = loginStatus === "success";
-  const { actor, isFetching } = useActor(createActor);
+  const isAuthPending = loginStatus === "idle" || loginStatus === "logging-in";
+  const { actor, isFetching: actorFetching } = useActor(createActor);
 
-  const { data: isAdmin = false, isLoading } = useQuery<boolean>({
+  const actorReady = !!actor && !actorFetching;
+
+  const { data: isAdmin = false, isLoading: queryLoading } = useQuery<boolean>({
     queryKey: ["isAdmin", isAuthenticated],
     queryFn: async () => {
       if (!actor) return false;
@@ -30,13 +33,21 @@ export function useIsAdmin() {
         return false;
       }
     },
-    enabled: !!actor && !isFetching && isAuthenticated,
-    staleTime: 1000 * 60 * 5, // cache for 5 minutes
+    enabled: actorReady && isAuthenticated,
+    staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  // Not authenticated = definitely not admin
-  if (!isAuthenticated) return { isAdmin: false, isLoading: false };
+  // Still determining auth state — don't redirect yet
+  if (isAuthPending || (isAuthenticated && !actorReady)) {
+    return { isAdmin: false, isLoading: true };
+  }
 
-  return { isAdmin, isLoading };
+  // Not authenticated at all = not admin
+  if (!isAuthenticated) {
+    return { isAdmin: false, isLoading: false };
+  }
+
+  // Authenticated, actor ready — return query state
+  return { isAdmin, isLoading: queryLoading };
 }

@@ -11,6 +11,7 @@ import type {
   ITModule,
   QuizAttempt,
   QuizQuestion,
+  RazorpayOrderResult,
   SubscriptionView,
   Term,
   UserProgress,
@@ -197,6 +198,7 @@ const sampleProgress: UserProgress = {
   lastQuizScore: BigInt(0),
   lastQuizAttemptedAt: BigInt(0),
   totalLearningHours: BigInt(0),
+  streakDays: BigInt(0),
 };
 
 const sampleSubscription: SubscriptionView = {
@@ -214,8 +216,11 @@ const sampleAdminUser: AdminUserView = {
   userIdText: "2vxsx-fae",
   signupAt: now,
   lastActiveAt: now,
+  lastLoginAt: now,
   subscriptionStatus: "active",
+  subscriptionPlan: "Base ₹199",
   coursesCompleted: BigInt(2),
+  loginCount: BigInt(5),
   totalProgress: 40.0,
 };
 
@@ -232,11 +237,15 @@ const sampleSubscriptionStats: SubscriptionStats = {
   totalUsers: BigInt(42),
   subscribedUsers: BigInt(18),
   activeSubscriptions: BigInt(15),
+  recentSignups: BigInt(7),
+  totalPayments: BigInt(18),
+  totalRevenue: BigInt(3582),
 };
 
 export const mockBackend: backendInterface = {
   canAccessLesson: async (lessonIndex: bigint) => lessonIndex < BigInt(2),
   canAccessModule: async (moduleIndex: bigint) => moduleIndex === BigInt(0),
+  canAccessCapstone: async () => false,
   checkSubscription: async () => sampleSubscription,
   getAllUsersAdmin: async () => [sampleAdminUser],
   getCertificate: async (_id: string) => sampleCertificate,
@@ -276,6 +285,12 @@ export const mockBackend: backendInterface = {
   } as QuizAttempt),
   updateLearningHours: async () => undefined,
   activateSubscriptionWithRazorpay: async (_orderId: string, _paymentId: string) => true,
-  createRazorpayOrder: async () => ({ ok: "order_test123" } as any),
+  activateCapstoneWithRazorpay: async (_orderId: string, _paymentId: string) => true,
+  createRazorpayOrder: async () => ({ __kind__: "ok", ok: "order_test123" } as RazorpayOrderResult),
+  createCapstoneOrder: async () => ({ __kind__: "ok", ok: "order_capstone_test456" } as RazorpayOrderResult),
+  getCapstoneSubscription: async () => null,
   setRazorpayKeys: async (_keyId: string, _keySecret: string) => true,
+  getLoginEvents: async () => [],
+  getPaymentRecords: async () => [],
+  recordLoginEvent: async () => undefined,
 };

@@ -1,7 +1,8 @@
 /**
  * useSubscription — freemium paywall hook for IT Fresher Hub
  *
- * Subscription: ₹499 for 45-day access (not monthly).
+ * Subscription: ₹199 lifetime access (no expiry).
+ * Capstone add-on: ₹499 (separate one-time purchase).
  * First module of every course is always free.
  * Subscription state is persisted in localStorage and verified against backend.
  *
@@ -21,8 +22,10 @@ declare global {
 }
 
 const SUBSCRIPTION_KEY = "itfresherhub_subscription_v2";
-export const PRICE_INR = 499;
-export const SUBSCRIPTION_DAYS = 45;
+export const PRICE_INR = 199;
+export const CAPSTONE_PRICE_INR = 499;
+/** Lifetime plan — no expiry. Set to a large number so countdown logic never shows "expired" for active subscribers. */
+export const SUBSCRIPTION_DAYS = 36500;
 
 export interface SubscriptionData {
   active: boolean;
@@ -159,6 +162,16 @@ export function useSubscription(): UseSubscriptionReturn {
   // Admin bypass: admins always have full access without needing a subscription
   const { isAdmin } = useIsAdmin();
 
+  // Record login event when user first authenticates (once per session)
+  const loginRecorded = useRef(false);
+  useEffect(() => {
+    if (!actor || !isAuthenticated || loginRecorded.current) return;
+    loginRecorded.current = true;
+    actor.recordLoginEvent().catch(() => {
+      /* best-effort — ignore errors */
+    });
+  }, [actor, isAuthenticated]);
+
   // Sync subscription status from backend canister on mount (once actor is ready)
   useEffect(() => {
     if (!actor || syncedFromBackend.current) return;
@@ -272,10 +285,10 @@ export function useSubscription(): UseSubscriptionReturn {
 
     const rzp = new window.Razorpay({
       key: razorpayKey,
-      amount: 49900,
+      amount: 19900,
       currency: "INR",
       name: "IT Fresher Hub",
-      description: "45-Day Full Access",
+      description: "Lifetime Full Access",
       image: "/logo.png",
       theme: { color: "#6d28d9" },
       prefill: {},

@@ -13,5 +13,6 @@ module {
     totalLearningHours : Nat;
     lastQuizScore : ?Nat;
     lastQuizAttemptedAt : ?CommonTypes.Timestamp;
+    streakDays : Nat;
   };
 };

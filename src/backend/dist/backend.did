@@ -3,6 +3,7 @@ type UserProgress =
    lastQuizAttemptedAt: opt Timestamp;
    lastQuizScore: opt nat;
    moduleProgress: vec ModuleProgress;
+   streakDays: nat;
    totalLearningHours: nat;
    userId: UserId;
  };
@@ -37,7 +38,10 @@ type SubscriptionStatus =
 type SubscriptionStats = 
  record {
    activeSubscriptions: nat;
+   recentSignups: nat;
    subscribedUsers: nat;
+   totalPayments: nat;
+   totalRevenue: nat;
    totalUsers: nat;
  };
 type StripeWebhookPayload = 
@@ -70,6 +74,17 @@ type QuizAttempt =
    score: nat;
    totalQuestions: nat;
    userId: UserId;
+ };
+type PaymentRecord = 
+ record {
+   amount: nat;
+   orderId: text;
+   paymentId: text;
+   plan: text;
+   status: text;
+   timestamp: Timestamp;
+   userId: UserId;
+   userIdText: text;
  };
 type ModuleProgress = 
  record {
@@ -105,6 +120,12 @@ type ModuleCategory =
    software;
    sql;
    trending;
+ };
+type LoginEvent = 
+ record {
+   timestamp: Timestamp;
+   userId: UserId;
+   userIdText: text;
  };
 type Lesson = 
  record {
@@ -153,30 +174,47 @@ type CertificateView =
    userId: UserId;
    verificationCode: text;
  };
+type CapstoneSubscriptionView = 
+ record {
+   activated: bool;
+   activatedAt: Timestamp;
+   razorpayOrderId: opt text;
+   razorpayPaymentId: opt text;
+   userId: UserId;
+ };
 type AdminUserView = 
  record {
    coursesCompleted: nat;
    lastActiveAt: Timestamp;
+   lastLoginAt: Timestamp;
+   loginCount: nat;
    signupAt: Timestamp;
+   subscriptionPlan: text;
    subscriptionStatus: text;
    totalProgress: float64;
    userId: UserId;
    userIdText: text;
  };
 service : {
+  activateCapstoneWithRazorpay: (orderId: text, paymentId: text) -> (bool);
   activateSubscriptionWithRazorpay: (orderId: text, paymentId: text) ->
    (bool);
+  canAccessCapstone: () -> (bool);
   canAccessLesson: (lessonIndex: nat) -> (bool);
   canAccessModule: (moduleIndex: nat) -> (bool);
   checkSubscription: () -> (opt SubscriptionView);
+  createCapstoneOrder: () -> (RazorpayOrderResult);
   createRazorpayOrder: () -> (RazorpayOrderResult);
   getAllUsersAdmin: () -> (vec AdminUserView) query;
+  getCapstoneSubscription: () -> (opt CapstoneSubscriptionView);
   getCertificate: (id: text) -> (opt CertificateView) query;
   getCourseCompletions: () -> (vec CourseCompletion) query;
+  getLoginEvents: () -> (vec LoginEvent) query;
   getModule: (moduleId: nat) -> (opt ITModule) query;
   getMyCertificates: () -> (vec CertificateView) query;
   getMyProgress: () -> (UserProgress) query;
   getMyQuizAttempt: () -> (opt QuizAttempt) query;
+  getPaymentRecords: () -> (vec PaymentRecord) query;
   getSubscriptionStatsAdmin: () -> (SubscriptionStats) query;
   getTerm: (termId: nat) -> (opt Term) query;
   getTermsByCategory: (category: GlossaryCategory) -> (vec Term) query;
@@ -189,6 +227,7 @@ service : {
   listSubscribers: () -> (vec SubscriptionView) query;
   markCourseComplete: (courseId: text, courseName: text) -> (CertificateView);
   markModuleCompleted: (moduleId: nat) -> ();
+  recordLoginEvent: () -> ();
   searchGlossary: (searchText: text) -> (vec Term) query;
   setOwner: () -> ();
   setRazorpayKeys: (keyId: text, keySecret: text) -> (bool);

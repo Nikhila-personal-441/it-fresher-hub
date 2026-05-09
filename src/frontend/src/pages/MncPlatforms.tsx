@@ -949,10 +949,25 @@ const PLATFORMS: Platform[] = [
           "Customer complaints from email, chat, and social are unified in HubSpot Service Hub — SLA timers track response times automatically.",
       },
       {
-        name: "Content Hub",
-        description: "Website and blog management — SEO-optimized publishing.",
+        name: "HubSpot Operations Hub",
+        description:
+          "Sync, clean, and automate data across your tech stack — keep CRM data accurate.",
         scenario:
-          "The marketing team publishes SEO-optimized blog posts and landing pages directly in HubSpot — no developer needed.",
+          "Operations Hub syncs HubSpot and Salesforce bidirectionally in real time — when a deal closes in Salesforce, HubSpot auto-updates the contact lifecycle stage and triggers a post-sales sequence.",
+      },
+      {
+        name: "HubSpot Reporting",
+        description:
+          "Built-in reporting on all marketing, sales, and service activity in one place.",
+        scenario:
+          "The RevOps analyst builds a funnel report showing conversion rates from web visitor to MQL to SQL to closed-won — the team spots that SQLs from organic blog posts convert 2x better than paid ads.",
+      },
+      {
+        name: "HubSpot Sequences",
+        description:
+          "Automated, personalized email sequences for sales outreach — stops when prospect replies.",
+        scenario:
+          "The BDR enrolls 100 cold prospects into a 7-step sequence — 3 emails, 2 LinkedIn messages, 2 call reminders over 14 days. When a prospect replies, they are automatically unenrolled from the sequence.",
       },
     ],
   },
@@ -1791,6 +1806,488 @@ const PLATFORMS: Platform[] = [
       },
     ],
   },
+  // ── NEW PLATFORMS: Apache Kafka, dbt, Dynatrace, Pega, HashiCorp Vault ──────
+  {
+    name: "Apache Kafka",
+    abbr: "KFK",
+    color: "#231F20",
+    category: "Data Engineering",
+    tagline: "Real-time data streaming — the backbone of modern data pipelines",
+    what: "Apache Kafka is a distributed event streaming platform used for real-time data pipelines, event-driven architectures, and stream processing. Originally built by LinkedIn, it is the standard for high-throughput, fault-tolerant message streaming in enterprises worldwide.",
+    whyMncs:
+      "MNCs process millions of events per second — user clicks, transactions, sensor readings, application logs. Kafka acts as the central nervous system, routing all that data reliably between dozens of systems without losing a single event.",
+    roles: [
+      "Data Engineer",
+      "Backend Engineer",
+      "Platform Engineer",
+      "Site Reliability Engineer",
+      "Streaming Engineer",
+      "Solutions Architect",
+    ],
+    learningPath:
+      "Kafka fundamentals → Producers/Consumers → Kafka Streams → Schema Registry → Confluent Certified Developer → Kafka Admin",
+    demand: "Very High",
+    salary: "₹10–28 LPA",
+    companies: [
+      "LinkedIn",
+      "Uber",
+      "Netflix",
+      "Flipkart",
+      "Swiggy",
+      "TCS",
+      "Infosys",
+    ],
+    certifications: [
+      "Confluent Certified Developer for Apache Kafka",
+      "Confluent Certified Administrator for Apache Kafka",
+      "Confluent Cloud Operator",
+    ],
+    funFact:
+      "Kafka processes over 7 trillion messages per day at LinkedIn alone. Every time you see a LinkedIn notification, Kafka made it happen.",
+    keyServices: [
+      {
+        name: "Kafka Topics & Partitions",
+        description:
+          "Topics are named channels for publishing events; partitions enable parallel processing and horizontal scaling.",
+        scenario:
+          "The e-commerce platform has an orders topic with 12 partitions — order events flow in at 50,000 per second and 12 consumer instances process them in parallel without any coordination overhead.",
+      },
+      {
+        name: "Kafka Producers & Consumers",
+        description:
+          "Producers publish events to topics; consumers read and process them independently at their own pace.",
+        scenario:
+          "The payment service produces a payment_received event — the fraud detection service, notification service, and analytics service all consume it independently without coupling.",
+      },
+      {
+        name: "Kafka Streams",
+        description:
+          "Java library for building real-time stream processing applications on top of Kafka.",
+        scenario:
+          "A Kafka Streams app aggregates click events in real time, computing per-product view counts in 5-second tumbling windows — the dashboard updates live without batch jobs.",
+      },
+      {
+        name: "Schema Registry",
+        description:
+          "Central schema store that enforces data contracts between producers and consumers.",
+        scenario:
+          "The Schema Registry prevents the payments team from breaking the analytics pipeline — any schema change that would fail existing consumers is rejected before deployment.",
+      },
+      {
+        name: "Kafka Connect",
+        description:
+          "Framework for integrating Kafka with external systems — databases, cloud storage, search engines.",
+        scenario:
+          "Kafka Connect streams every database change from PostgreSQL via Debezium CDC connector to Snowflake for analytics — zero custom ETL code written.",
+      },
+      {
+        name: "ksqlDB",
+        description:
+          "SQL interface for stream processing — query Kafka topics like a database table.",
+        scenario:
+          "The ops team writes a ksqlDB query to count page views per user continuously — it runs non-stop, updating a materialized view in real time without any batch jobs.",
+      },
+      {
+        name: "Confluent Cloud",
+        description:
+          "Fully managed Kafka as a service on AWS, Azure, or GCP — no infrastructure to manage.",
+        scenario:
+          "The startup uses Confluent Cloud to get Kafka without an ops team — they provision a cluster, create topics, and start producing events in 10 minutes.",
+      },
+      {
+        name: "MirrorMaker 2",
+        description:
+          "Replicates Kafka topics between clusters for disaster recovery and geo-distribution.",
+        scenario:
+          "MirrorMaker 2 replicates all Kafka data from the Mumbai cluster to Hyderabad in real time — if the primary goes down, failover completes in under 30 seconds.",
+      },
+    ],
+  },
+  {
+    name: "dbt (data build tool)",
+    abbr: "dbt",
+    color: "#FF694A",
+    category: "Data Engineering",
+    tagline: "The analytics engineer best tool — transform data with SQL",
+    what: "dbt (data build tool) lets analysts write SQL SELECT statements and dbt handles the rest — materializing tables or views, running tests, and documenting data lineage. It brings software engineering best practices like version control, testing, and documentation to analytics workflows.",
+    whyMncs:
+      "Before dbt, analysts wrote transformation SQL in spreadsheets or ad-hoc scripts that no one else could understand or maintain. dbt gives data teams version-controlled, tested, documented transformations — a single source of truth for business metrics.",
+    roles: [
+      "Analytics Engineer",
+      "Data Engineer",
+      "Data Analyst",
+      "BI Developer",
+      "Data Platform Engineer",
+      "Data Architect",
+    ],
+    learningPath:
+      "dbt Fundamentals (free) → dbt Core → dbt Cloud → dbt Certified Developer → Advanced: macros, packages, Jinja",
+    demand: "High",
+    salary: "₹10–25 LPA",
+    companies: [
+      "Airbnb",
+      "GitLab",
+      "Shopify",
+      "Postman",
+      "Accenture",
+      "Deloitte",
+      "Thoughtworks",
+    ],
+    certifications: [
+      "dbt Certified Developer",
+      "Databricks Lakehouse Fundamentals (complements dbt)",
+      "SnowPro Core (Snowflake plus dbt combo)",
+    ],
+    funFact:
+      "dbt has over 30,000 GitHub stars and the dbt Slack community has 50,000+ members. The analytics engineer job title barely existed before dbt — dbt created a new profession.",
+    keyServices: [
+      {
+        name: "dbt Models",
+        description:
+          "Write plain SQL SELECT statements; dbt materializes them as tables or views in your warehouse automatically.",
+        scenario:
+          "The analyst writes a 20-line SQL SELECT joining raw orders with customers — running dbt run materializes it as a clean orders_enriched table in Snowflake ready for BI tools.",
+      },
+      {
+        name: "dbt Tests",
+        description:
+          "Built-in data quality tests: not_null, unique, accepted_values, relationships — run automatically on every build.",
+        scenario:
+          "The team adds a not_null test on order_id and a unique test on customer_email — dbt test fails the pipeline and alerts before any dashboard shows incorrect data.",
+      },
+      {
+        name: "dbt Documentation and Lineage Graph",
+        description:
+          "Auto-generated documentation showing every model, column, description, and data lineage.",
+        scenario:
+          "A new analyst runs dbt docs generate and sees a visual lineage graph showing how raw Salesforce data flows through 12 transformation steps to produce the monthly revenue metric.",
+      },
+      {
+        name: "dbt Sources",
+        description:
+          "Declare and document raw data sources that dbt models are built on top of.",
+        scenario:
+          "The team declares the raw Salesforce and Stripe tables as dbt sources with freshness checks — an automated alert fires if source data is more than 6 hours stale.",
+      },
+      {
+        name: "dbt Macros and Jinja",
+        description:
+          "Reusable SQL functions using Jinja templating — eliminate duplication across models.",
+        scenario:
+          "A macro called cents_to_dollars is defined once and used in 40 models — the finance team changes rounding logic in one place and it propagates everywhere.",
+      },
+      {
+        name: "dbt Packages",
+        description:
+          "Pre-built collections of models and macros from the community hub.",
+        scenario:
+          "The team installs dbt_utils from the Hub and immediately gets 30+ helper macros for date spines, surrogate keys, and pivot tables — days of custom code avoided.",
+      },
+      {
+        name: "dbt Cloud",
+        description:
+          "Managed dbt platform with scheduling, CI/CD, IDE, and collaboration built in.",
+        scenario:
+          "dbt Cloud runs the full transformation pipeline every morning at 5 AM — a Slack notification confirms all 150 models built and 400 tests passed before analysts start work.",
+      },
+      {
+        name: "dbt Exposures",
+        description:
+          "Declare downstream consumers of dbt models — dashboards, reports, ML models.",
+        scenario:
+          "The monthly_revenue model is declared as powering the CFO Tableau dashboard — when a breaking change is proposed, dbt warns which downstream consumers will be affected.",
+      },
+    ],
+  },
+  {
+    name: "Dynatrace",
+    abbr: "DT",
+    color: "#1284C7",
+    category: "Monitoring",
+    tagline: "AI-powered full-stack observability for cloud-native enterprises",
+    what: "Dynatrace is an AI-powered observability and APM platform. Using its proprietary Davis AI engine, it automatically discovers your entire application topology, monitors every transaction, and pinpoints root causes of performance issues — often before users notice anything wrong.",
+    whyMncs:
+      "Dynatrace is the choice for enterprises with complex hybrid cloud environments. Its OneAgent installs once and automatically instruments everything — no manual configuration of 200 microservices. Davis AI eliminates alert noise and surfaces only real problems.",
+    roles: [
+      "Site Reliability Engineer",
+      "Platform Engineer",
+      "DevOps Engineer",
+      "Application Performance Engineer",
+      "Cloud Operations Analyst",
+      "Security Engineer",
+    ],
+    learningPath:
+      "Dynatrace Foundations → Associate Certification → Professional Certification → Advanced: Davis AI, Security, Business Analytics",
+    demand: "High",
+    salary: "₹10–24 LPA",
+    companies: [
+      "Deutsche Bank",
+      "Siemens",
+      "Accenture",
+      "Infosys",
+      "HCL",
+      "Capgemini",
+      "IBM",
+    ],
+    certifications: [
+      "Dynatrace Associate",
+      "Dynatrace Professional",
+      "Dynatrace AIOps and Automation Specialist",
+    ],
+    funFact:
+      "Dynatrace Davis AI processes over 450 billion AI-powered decisions every day. It resolves the average production incident root cause in under 3 minutes vs the industry average of 5 hours.",
+    keyServices: [
+      {
+        name: "OneAgent",
+        description:
+          "Single agent deployed on each host that auto-discovers and instruments everything — no per-service configuration.",
+        scenario:
+          "The operations team deploys OneAgent on 300 servers in an afternoon — within an hour, Dynatrace auto-maps all 450 microservices and their dependencies without any manual configuration.",
+      },
+      {
+        name: "Davis AI Engine",
+        description:
+          "AI causation engine that analyzes millions of signals to pinpoint the precise root cause of incidents automatically.",
+        scenario:
+          "At 2 AM, Davis AI fires a single alert identifying a memory leak in the payment service pod causing slow database queries affecting 3% of checkout transactions — no analyst needed to correlate logs manually.",
+      },
+      {
+        name: "Distributed Tracing",
+        description:
+          "End-to-end request tracing across every microservice, database, and external API call.",
+        scenario:
+          "A checkout that takes 4 seconds is traced: 3.2 seconds is a single PostgreSQL query in the inventory service — Dynatrace shows the exact slow SQL statement with execution plan.",
+      },
+      {
+        name: "Real User Monitoring",
+        description:
+          "Capture every real user interaction — page loads, clicks, crashes — across web and mobile.",
+        scenario:
+          "RUM shows that users on Android 12 in Mumbai experience 8-second load times for the checkout page — a specific CDN routing issue only Dynatrace correlates with that segment.",
+      },
+      {
+        name: "Smartscape Topology",
+        description:
+          "Live topology map of every service, host, process, and their dependencies — updated in real time.",
+        scenario:
+          "Before a major release, the team opens Smartscape to verify the dependency map is correct — they discover an unexpected connection to a decommissioned service before it causes a production incident.",
+      },
+      {
+        name: "Runtime Application Security",
+        description:
+          "Detect and block vulnerabilities and attacks in real time at the application runtime level.",
+        scenario:
+          "Dynatrace Security flags a Log4Shell vulnerability in a third-party library across 12 services — the security team knows exactly which versions are affected and which are already patched.",
+      },
+      {
+        name: "Business Analytics",
+        description:
+          "Correlate technical metrics with business KPIs — revenue, conversions, orders — in one view.",
+        scenario:
+          "A 200ms increase in checkout response time correlates with a 2.3% drop in conversion rate — Dynatrace quantifies the business impact of every performance degradation in rupees.",
+      },
+      {
+        name: "Log Management and Analytics",
+        description:
+          "Ingest, index, and analyze logs at petabyte scale with AI-powered pattern detection.",
+        scenario:
+          "Davis AI detects an unusual error pattern in logs 45 minutes before customer complaints arrive — the team deploys a hotfix during off-peak hours with zero user impact.",
+      },
+    ],
+  },
+  {
+    name: "Pega Platform",
+    abbr: "PEGA",
+    color: "#00A0D6",
+    category: "BPM",
+    tagline: "Low-code BPM and CRM — automate complex enterprise workflows",
+    what: "Pega Platform is a low-code application development platform specializing in Business Process Management and CRM. Used by banks, insurance companies, and telcos to automate complex multi-step business processes — from loan approvals to claims processing to customer onboarding.",
+    whyMncs:
+      "Insurance companies process 10,000+ claims per day with strict SLAs and compliance requirements. Pega automates the entire workflow — intake, verification, decision, payment — with full audit trails. What used to take 15 manual steps and 3 days completes automatically in hours.",
+    roles: [
+      "Pega Developer (CSA/CSSA)",
+      "Business Analyst",
+      "Pega Architect",
+      "CRM Consultant",
+      "RPA Developer",
+      "Integration Developer",
+    ],
+    learningPath:
+      "Pega Academy (free) → CSA (System Architect) → CSSA (Senior System Architect) → LSA (Lead System Architect)",
+    demand: "High",
+    salary: "₹7–20 LPA",
+    companies: [
+      "Accenture",
+      "Capgemini",
+      "Cognizant",
+      "Wipro",
+      "IBM",
+      "TCS",
+      "Infosys",
+    ],
+    certifications: [
+      "Pega Certified System Architect (CSA)",
+      "Pega Certified Senior System Architect (CSSA)",
+      "Pega Certified Lead System Architect (LSA)",
+      "Pega Customer Decision Hub Specialist",
+    ],
+    funFact:
+      "Pega processes over 1 trillion USD in financial transactions annually. 80+ of the world largest banks use Pega for loan origination or compliance workflows. Pega CSA certified professionals command 8+ LPA in India.",
+    keyServices: [
+      {
+        name: "Case Management",
+        description:
+          "Model complex, dynamic business processes as cases with stages, steps, and automated routing.",
+        scenario:
+          "A bank loan application is modeled as a Pega case: intake, credit check automated, manual review, approval, disbursement — each stage has SLA timers and automatic escalation rules.",
+      },
+      {
+        name: "Business Rules Engine",
+        description:
+          "Define and manage business logic as configurable rules — no code changes for policy updates.",
+        scenario:
+          "When the insurance company changes its underwriting criteria, the risk team updates 5 business rules in Pega — the new policy is live in production without a single developer change.",
+      },
+      {
+        name: "Pega Customer Decision Hub",
+        description:
+          "AI-driven real-time decision engine for next best action across all customer channels.",
+        scenario:
+          "When a bank customer calls support, Pega CDH analyzes their profile and suggests the agent offer a pre-approved personal loan — conversion rates improve by 35%.",
+      },
+      {
+        name: "Pega Robotic Process Automation",
+        description:
+          "Automate repetitive desktop tasks — copy-paste, form filling, legacy system access — with software robots.",
+        scenario:
+          "The back-office team used to spend 4 hours per day copying data between the legacy mainframe and CRM. A Pega RPA robot does it in 20 minutes with zero errors.",
+      },
+      {
+        name: "App Studio Low-Code UI",
+        description:
+          "Visual drag-and-drop interface for business users to build and modify applications.",
+        scenario:
+          "The compliance manager builds a new audit checklist application in Pega App Studio in 2 days — no developer required, integrating with existing case management workflow.",
+      },
+      {
+        name: "Pega Customer Service",
+        description:
+          "Omnichannel customer service platform with guided work, intelligent routing, and case resolution.",
+        scenario:
+          "A telecom complaint arrives via chat, phone, and email — Pega unifies all three into one case, routes to the best agent, and provides a script with the customer full history.",
+      },
+      {
+        name: "Pega Sales Automation",
+        description:
+          "AI-guided selling with predictive opportunity scoring and automated follow-up.",
+        scenario:
+          "Pega scores each sales opportunity based on 40 signals and guides the sales rep through the optimal next action — win rates improve by 25% in the first quarter after rollout.",
+      },
+      {
+        name: "Integration Framework",
+        description:
+          "Connect Pega to SAP, Salesforce, legacy systems, and REST APIs through a visual integration layer.",
+        scenario:
+          "When a Pega case reaches the payment stage, it calls the SAP payment API automatically — no manual data entry between systems and full audit trail maintained.",
+      },
+    ],
+  },
+  {
+    name: "HashiCorp Vault",
+    abbr: "HCV",
+    color: "#FFCF25",
+    category: "Security",
+    tagline: "Secrets management — secure every credential in your enterprise",
+    what: "HashiCorp Vault is the industry standard for secrets management — securely storing and tightly controlling access to tokens, passwords, certificates, API keys, and encryption keys. Applications request secrets from Vault dynamically at runtime instead of using hardcoded credentials.",
+    whyMncs:
+      "A single hardcoded AWS key in a public GitHub repository can expose an entire cloud environment. MNCs manage thousands of secrets across hundreds of applications. Vault centralizes secret storage, enforces least-privilege access, auto-rotates credentials, and provides a full audit trail.",
+    roles: [
+      "Security Engineer",
+      "DevOps Engineer",
+      "Platform Engineer",
+      "Cloud Security Architect",
+      "Site Reliability Engineer",
+      "Infrastructure Engineer",
+    ],
+    learningPath:
+      "HashiCorp Vault Associate → Vault Operations Professional → Advanced: HSM Integration, PKI, Database Secrets",
+    demand: "High",
+    salary: "₹10–25 LPA",
+    companies: [
+      "Accenture",
+      "Wipro",
+      "TCS",
+      "Deloitte",
+      "IBM",
+      "HCL",
+      "Capgemini",
+    ],
+    certifications: [
+      "HashiCorp Vault Associate",
+      "HashiCorp Vault Operations Professional",
+      "AWS Security Specialty (complements Vault)",
+    ],
+    funFact:
+      "The 2021 Colonial Pipeline ransomware attack was traced to a single compromised VPN password. Vault dynamic secrets — auto-expiring per-request credentials — make such attacks nearly impossible since static credentials never exist long enough to steal.",
+    keyServices: [
+      {
+        name: "Key-Value Secrets Engine",
+        description:
+          "Store and retrieve static secrets — API keys, database passwords, certificates — with fine-grained access control.",
+        scenario:
+          "Instead of hardcoding the production database password in app config, the application calls Vault KV engine at startup — only that app Vault role can read that specific secret.",
+      },
+      {
+        name: "Dynamic Secrets",
+        description:
+          "Generate short-lived credentials on-demand for databases, cloud providers, and SSH — they expire automatically.",
+        scenario:
+          "Every time the data pipeline runs, Vault generates a fresh PostgreSQL username and password that expires in 1 hour — even if the credential leaks, it is useless in minutes.",
+      },
+      {
+        name: "PKI Secrets Engine",
+        description:
+          "Internal Certificate Authority — issue and auto-renew TLS certificates for services.",
+        scenario:
+          "Every microservice gets a unique TLS certificate from Vault PKI with a 24-hour TTL — mutual TLS between services is enforced automatically with no manual certificate management.",
+      },
+      {
+        name: "Vault Agent and Auto-Auth",
+        description:
+          "Sidecar agent that authenticates applications to Vault and caches secrets locally for resilience.",
+        scenario:
+          "A Kubernetes pod running the payment service has a Vault Agent sidecar — it automatically fetches and refreshes the database password, injecting it as an environment variable without any custom code.",
+      },
+      {
+        name: "Audit Logging",
+        description:
+          "Every secret access, authentication, and policy change is logged with full request and response details.",
+        scenario:
+          "During a security audit, the compliance team queries Vault audit log to show exactly which services accessed the payment gateway API key in the last 90 days — full evidence trail produced in minutes.",
+      },
+      {
+        name: "Transit Secrets Engine (Encryption as a Service)",
+        description:
+          "Encrypt and decrypt data without storing it in Vault — applications outsource cryptographic operations.",
+        scenario:
+          "The patient records service never handles raw encryption keys — it sends data to Vault Transit engine for encryption and decryption, keeping cryptographic logic out of application code.",
+      },
+      {
+        name: "Vault Policies (ACL)",
+        description:
+          "Fine-grained access control policies defining which apps, users, and services can access which secrets.",
+        scenario:
+          "The production payment service can only read payment gateway credentials. The CI/CD pipeline can only write to staging secrets. No application can access another team secrets — enforced by Vault policies.",
+      },
+      {
+        name: "HCP Vault Managed Service",
+        description:
+          "HashiCorp Cloud Platform managed Vault — no infrastructure to operate, available on AWS, Azure, and GCP.",
+        scenario:
+          "The startup uses HCP Vault instead of running their own cluster — HashiCorp handles high availability, backups, and upgrades while the team focuses on integrating Vault into their CI/CD pipeline.",
+      },
+    ],
+  },
 ];
 
 const DEMAND_COLORS: Record<string, string> = {
@@ -1805,13 +2302,11 @@ function PlatformCard({ platform }: { platform: Platform }) {
   const { isSubscribed, isAdmin } = useSubscription();
   const hasAccess = isSubscribed || isAdmin;
 
-  const handleExpandClick = () => {
-    if (!hasAccess) {
-      setShowPaywall(true);
-      return;
-    }
-    setExpanded(!expanded);
-  };
+  // First 80 chars of 'what' for free preview
+  const whatPreview =
+    platform.what.length > 80
+      ? `${platform.what.slice(0, 80)}...`
+      : platform.what;
 
   return (
     <div
@@ -1853,7 +2348,11 @@ function PlatformCard({ platform }: { platform: Platform }) {
         </div>
       </div>
 
-      {/* Premium gated content */}
+      {/* 80-char preview of 'what' — always visible */}
+      <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+        {whatPreview}
+      </p>
+
       {hasAccess ? (
         <>
           {/* Demand + Salary */}
@@ -1871,10 +2370,12 @@ function PlatformCard({ platform }: { platform: Platform }) {
             </span>
           </div>
 
-          {/* What it does */}
-          <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-            {platform.what}
-          </p>
+          {/* Full what text (rest of it) */}
+          {platform.what.length > 80 && (
+            <p className="text-sm text-muted-foreground leading-relaxed mb-3 -mt-1">
+              {platform.what.slice(80)}
+            </p>
+          )}
 
           {/* Fun fact */}
           <div className="p-2.5 rounded-lg bg-[oklch(var(--platform-accent)/0.06)] border border-[oklch(var(--platform-accent)/0.15)] mb-3">
@@ -2009,7 +2510,7 @@ function PlatformCard({ platform }: { platform: Platform }) {
       ) : (
         // Blurred premium content overlay for non-subscribers
         <div className="relative mt-1">
-          {/* Blurred preview content */}
+          {/* Blurred ghost content */}
           <div
             className="pointer-events-none select-none"
             style={{ filter: "blur(6px)", userSelect: "none" }}
@@ -2019,34 +2520,30 @@ function PlatformCard({ platform }: { platform: Platform }) {
               <span className="flex items-center gap-1">
                 <TrendingUp className="w-3 h-3 text-muted-foreground" />
                 <span className="text-muted-foreground">Demand:</span>
-                <strong className={DEMAND_COLORS[platform.demand]}>
-                  {platform.demand}
-                </strong>
+                <strong>Very High</strong>
               </span>
-              <span className="flex items-center gap-1 font-semibold text-[oklch(var(--capstone-accent))]">
+              <span className="flex items-center gap-1 font-semibold">
                 <Zap className="w-3 h-3" />
-                {platform.salary}
+                ₹8–30 LPA
               </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-3">
               {platform.what}
             </p>
-            <div className="p-2.5 rounded-lg bg-[oklch(var(--platform-accent)/0.06)] border border-[oklch(var(--platform-accent)/0.15)] mb-3">
+            <div className="p-2.5 rounded-lg bg-muted/30 border border-border mb-3">
               <p className="text-xs text-muted-foreground line-clamp-2">
-                💡 {platform.funFact}
+                💡 Premium insight available after upgrade
               </p>
             </div>
             <div className="space-y-1.5">
-              {platform.keyServices.slice(0, 2).map((svc) => (
+              {["Service 1", "Service 2"].map((s) => (
                 <div
-                  key={svc.name}
+                  key={s}
                   className="p-2 rounded-lg bg-muted/40 border border-border"
                 >
-                  <p className="text-xs font-semibold text-foreground">
-                    {svc.name}
-                  </p>
+                  <p className="text-xs font-semibold text-foreground">{s}</p>
                   <p className="text-xs text-muted-foreground">
-                    {svc.description}
+                    Detailed description hidden
                   </p>
                 </div>
               ))}
@@ -2073,23 +2570,10 @@ function PlatformCard({ platform }: { platform: Platform }) {
               onClick={() => setShowPaywall(true)}
               data-ocid={`platform-upgrade-${platform.abbr.toLowerCase()}`}
             >
-              Upgrade
+              Upgrade to Unlock
             </Button>
           </div>
         </div>
-      )}
-
-      {/* Also blur the expand button for non-subscribers */}
-      {!hasAccess && (
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-xs font-semibold text-[oklch(var(--platform-accent))] hover:opacity-80 transition-smooth w-full justify-between mt-3 pt-3 border-t border-border"
-          onClick={handleExpandClick}
-          data-ocid={`platform-expand-${platform.abbr.toLowerCase()}`}
-        >
-          <span>See key services, roles & learning path</span>
-          <ChevronDown className="w-3.5 h-3.5" />
-        </button>
       )}
 
       <PaywallModal
@@ -2120,6 +2604,9 @@ const CATEGORY_FILTERS = [
   "Database",
   "HCM/ERP",
   "CRM/ERP",
+  "Data Engineering",
+  "Security",
+  "BPM",
 ];
 
 export default function MncPlatforms() {
@@ -2152,7 +2639,7 @@ export default function MncPlatforms() {
             color: "oklch(var(--platform-accent))",
           }}
         >
-          30 Platforms
+          35 Platforms
         </Badge>
       </div>
 
@@ -2176,7 +2663,7 @@ export default function MncPlatforms() {
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { value: "30+", label: "Enterprise Platforms" },
+            { value: "35+", label: "Enterprise Platforms" },
             { value: "80%", label: "of MNCs use AWS" },
             { value: "₹4–35 LPA", label: "Salary range" },
           ].map((stat) => (

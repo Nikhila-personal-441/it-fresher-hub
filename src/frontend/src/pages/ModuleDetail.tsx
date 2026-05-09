@@ -259,7 +259,7 @@ export default function ModuleDetail() {
   // empty userId segment ("courseProgress--<id>") or the anon prefix.
   // These can exist from older code paths and would cause false progress
   // to appear on CoursesHub for unauthenticated or new users.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount cleanup
+
   useEffect(() => {
     const allKeys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -809,7 +809,7 @@ export default function ModuleDetail() {
                 Upgrade to Premium
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                ₹499 / 45 days · Unlock all {lessons.length} lessons
+                ₹199 lifetime · Unlock all {lessons.length} lessons
               </p>
             </motion.button>
           )}

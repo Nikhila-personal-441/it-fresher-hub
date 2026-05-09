@@ -8,8 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  CAPSTONE_PRICE_INR,
   PRICE_INR,
-  SUBSCRIPTION_DURATION_DAYS,
   useSubscription,
 } from "@/hooks/useSubscription";
 import {
@@ -206,8 +206,8 @@ export function PaywallModal({
                   <span className="font-display font-bold text-3xl text-foreground">
                     ₹{PRICE_INR}
                   </span>
-                  <span className="text-muted-foreground text-sm">
-                    / {SUBSCRIPTION_DURATION_DAYS} days
+                  <span className="text-muted-foreground text-sm line-through opacity-50">
+                    ₹499
                   </span>
                 </div>
               </div>
@@ -217,10 +217,10 @@ export function PaywallModal({
                   className="text-xs border-green-500/40 text-green-600 bg-green-500/10"
                 >
                   <Sparkles className="w-3 h-3 mr-1" />
-                  One-time payment
+                  Lifetime access
                 </Badge>
                 <p className="text-xs text-muted-foreground">
-                  Access for {SUBSCRIPTION_DURATION_DAYS} days
+                  Access for lifetime
                 </p>
               </div>
             </div>
@@ -323,9 +323,18 @@ export function PaywallModal({
               ) : (
                 <Crown className="w-5 h-5" />
               )}
-              Subscribe for ₹{PRICE_INR} · {SUBSCRIPTION_DURATION_DAYS} Days
-              Access
+              Subscribe for ₹{PRICE_INR} · Lifetime Access
             </Button>
+            {/* Capstone add-on upsell */}
+            <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-3 text-xs text-amber-700 mb-1">
+              <p className="font-bold mb-0.5">
+                🎓 Capstone Project Add-on — ₹{CAPSTONE_PRICE_INR}
+              </p>
+              <p className="text-amber-600 leading-snug">
+                Unlock the full 22-step Capstone Project with certificate.
+                Available separately after your base subscription.
+              </p>
+            </div>
             <Button
               variant="ghost"
               className="w-full text-muted-foreground hover:text-foreground"

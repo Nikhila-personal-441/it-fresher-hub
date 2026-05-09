@@ -181,8 +181,9 @@ export default function Dashboard() {
   const [paywallOpen, setPaywallOpen] = useState(false);
 
   const completedCount = progress?.completedModules.length ?? 0;
-  const totalModules = modules?.length ?? 27;
-  const overallProgress = Math.round((completedCount / totalModules) * 100);
+  const totalModules = modules?.length ?? 0;
+  const overallProgress =
+    totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
   // Dynamic greeting based on time of day
   const hour = new Date().getHours();
@@ -307,7 +308,9 @@ export default function Dashboard() {
         <StatCard
           icon={BookOpen}
           label="Courses Available"
-          value="27"
+          value={String(
+            totalModules > 0 ? totalModules : modules === undefined ? "…" : 0,
+          )}
           sub="Across all tracks"
           color="bg-primary/15 text-primary"
           delay={0.05}
@@ -315,7 +318,7 @@ export default function Dashboard() {
         <StatCard
           icon={Award}
           label="Completed"
-          value={`${completedCount} / 27`}
+          value={`${completedCount} / ${totalModules}`}
           sub={`${overallProgress}% done`}
           color="bg-secondary/20 text-secondary-foreground"
           delay={0.1}

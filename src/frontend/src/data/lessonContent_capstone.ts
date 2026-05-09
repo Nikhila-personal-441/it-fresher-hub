@@ -760,4 +760,183 @@ export const CAPSTONE_LESSONS: LessonContent[] = [
         "Perfection is the enemy of launched. A live portfolio that is 80% perfect and actively promoted beats a 100% perfect portfolio that is hidden. Quality-targeted applications with portfolio links outperform mass-blasting by 5-10x in callback rate. Start today — every day you wait is a day a recruiter cannot find you.",
     },
   },
+
+  // ===== NEW LESSONS: Indices 15–21 =====
+
+  {
+    title: "Adding a Real-Time Search Feature",
+    content:
+      "<p>Rahul's portfolio has 8 projects now. His recruiter says: 'Can you filter these by tech stack?' Rahul stares at his screen. The projects are just a hardcoded HTML list. Adding search seems complex — but it's actually one JavaScript function away.</p>" +
+      '<p><strong>How it works:</strong> Every project card in your HTML has a <code>data-tags</code> attribute listing its tech stack, e.g., <code>data-tags="python flask sqlite"”</code>. Your search input listens for the <code>input</code> event. On every keystroke, it reads the current value, converts it to lowercase, then loops over all project cards and hides those whose tags don\'t include the search string.</p>' +
+      '<p><strong>Step 1 — Add data attributes to your project cards:</strong> <code>&lt;div class="project-card" data-tags="python flask sqlite api"&gt;</code>. Include all relevant keywords: language, framework, database, deployment platform. <strong>Step 2 — Add the search input in your HTML:</strong> <code>&lt;input id="project-search" type="search" placeholder="Filter by tech (e.g. python, flask)"&gt;</code>. <strong>Step 3 — Write the filter function:</strong></p>' +
+      "<p><code>document.getElementById('project-search').addEventListener('input', function() { const query = this.value.toLowerCase().trim(); document.querySelectorAll('.project-card').forEach(card => { const tags = card.dataset.tags || ''; card.style.display = tags.includes(query) || query === '' ? 'block' : 'none'; }); });</code></p>" +
+      "<p>This is DOM manipulation — reading and modifying the browser's live HTML tree with JavaScript. It's the core skill behind every interactive webpage. Test it: type 'python' and only Python projects should appear. Type 'flask' and only Flask projects. Clear the input and all projects return. Add a results count too: <code>const visible = [...cards].filter(c => c.style.display !== 'none').length; document.getElementById('result-count').textContent = visible + ' projects found';</code></p>",
+    funFact:
+      "JavaScript's querySelector is called over 1 trillion times per day across all websites globally. Every time you type in a search bar, filter a dropdown, or see live results — DOM manipulation is running behind the scenes.",
+    xpReward: 160,
+    miniChallenge: {
+      type: "multipleChoice",
+      question:
+        "You want a project card to disappear from the page without deleting it from the HTML. Which JavaScript property should you change?",
+      options: [
+        "card.innerHTML = ''",
+        "card.style.display = 'none'",
+        "card.remove()",
+        "card.setAttribute('hidden', true)",
+      ],
+      correctAnswer: "card.style.display = 'none'",
+      explanation:
+        "Setting display to 'none' hides the element visually while keeping it in the DOM. You can restore it with display = 'block' anytime — perfect for filters. card.remove() deletes it permanently. card.innerHTML = '' clears its contents but leaves an empty container. The hidden attribute also works but display is more commonly used for dynamic show/hide logic.",
+    },
+  },
+
+  {
+    title: "Building a Contact Form with Email Notifications",
+    content:
+      "<p>Priya's portfolio is live but recruiters have no way to reach her directly from the site. She adds her email address in plain text — within two days she's getting spam. The right solution is a contact form that sends emails without exposing her address and without requiring her own server. Enter Formspree.</p>" +
+      "<p><strong>What is Formspree?</strong> Formspree.io is a free service that accepts HTML form submissions and emails them to your address — no backend code needed. Your form submits to Formspree's server via HTTP POST, and Formspree emails the content to you. Free tier: 50 submissions per month.</p>" +
+      "<p><strong>Step 1 — Create your Formspree form:</strong> Go to https://formspree.io, sign up with your email, click 'New Form', give it a name like 'Portfolio Contact'. You'll get a unique endpoint URL like <code>https://formspree.io/f/xpzgkwnb</code>.</p>" +
+      "<p><strong>Step 2 — Build the HTML form:</strong></p>" +
+      '<p><code>&lt;form action="https://formspree.io/f/YOUR-ID" method="POST" id="contact-form"&gt; &lt;input type="text" name="name" required placeholder="Your name"&gt; &lt;input type="email" name="email" required placeholder="your@email.com"&gt; &lt;textarea name="message" required placeholder="Your message..."&gt;&lt;/textarea&gt; &lt;button type="submit"&gt;Send Message&lt;/button&gt; &lt;/form&gt;</code></p>' +
+      '<p><strong>Step 3 — Add validation:</strong> The <code>required</code> attribute handles blank fields. For email format, use <code>type="email"</code> — the browser validates the format automatically. For a friendly success/error message after submission, add a hidden result div and toggle it in JavaScript using the form\'s <code>submit</code> event with <code>fetch()</code> to submit asynchronously. <strong>Never put your real email in the form action</strong> — Formspree handles the routing securely.</p>',
+    funFact:
+      "The first email was sent in 1971 by Ray Tomlinson, who also invented the @ symbol convention. Contact forms became popular in the early 2000s as a way to prevent email harvesting bots from scraping plain-text email addresses from websites — a problem that still exists today.",
+    xpReward: 155,
+    miniChallenge: {
+      type: "multipleChoice",
+      question:
+        "Which HTTP method should a contact form use to submit data to a server?",
+      options: [
+        "GET — appends data to the URL",
+        "POST — sends data in the request body",
+        "PUT — updates existing data",
+        "DELETE — removes a resource",
+      ],
+      correctAnswer: "POST — sends data in the request body",
+      explanation:
+        "POST sends form data in the HTTP request body, not in the URL. This keeps the data out of browser history and server logs, handles long messages correctly, and prevents sensitive info from appearing in URLs. GET is only for retrieving data (like search queries) — never for submitting personal information.",
+    },
+  },
+
+  {
+    title: "Adding Dark Mode to Your Portfolio",
+    content:
+      "<p>Ankit's recruiter opens his portfolio at 11pm. The white background is blinding. Two seconds later the tab is closed. Dark mode is no longer a nice-to-have — it's an accessibility and UX expectation. Here's how to add it cleanly in 15 minutes using CSS custom properties and a single JavaScript toggle.</p>" +
+      "<p><strong>Step 1 — Define CSS variables for both themes:</strong></p>" +
+      "<p><code>:root { --bg-color: #ffffff; --text-color: #1a1a2e; --card-bg: #f4f4f8; --accent: #6d28d9; } :root.dark { --bg-color: #0f0f1a; --text-color: #e8e8f0; --card-bg: #1a1a2e; --accent: #a78bfa; }</code></p>" +
+      "<p>Now use these variables everywhere in your CSS instead of hardcoded colors: <code>body { background-color: var(--bg-color); color: var(--text-color); }</code>. When you add the <code>dark</code> class to <code>&lt;html&gt;</code>, all variables switch instantly — the entire page repaints with zero duplication.</p>" +
+      '<p><strong>Step 2 — Add the toggle button:</strong> <code>&lt;button id="theme-toggle" aria-label="Toggle dark mode"&gt;🌙&lt;/button&gt;</code>. <strong>Step 3 — Write the toggle function:</strong></p>' +
+      "<p><code>const toggle = document.getElementById('theme-toggle'); const root = document.documentElement; const saved = localStorage.getItem('theme'); if (saved === 'dark') { root.classList.add('dark'); toggle.textContent = '☀️'; } toggle.addEventListener('click', () => { const isDark = root.classList.toggle('dark'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); toggle.textContent = isDark ? '☀️' : '🌙'; });</code></p>" +
+      "<p>localStorage persists the user's preference across page reloads — so if a visitor chooses dark mode, it stays dark every time they return. Add a smooth transition: <code>body { transition: background-color 0.3s ease, color 0.3s ease; }</code>. Best practice: also check <code>window.matchMedia('(prefers-color-scheme: dark)')</code> on first load to respect the user's OS setting automatically.</p>",
+    funFact:
+      "Dark mode reduces battery usage by up to 63% on OLED screens (common on iPhones and Samsung Galaxy devices). Apple's 2019 iOS 13 dark mode update caused a 50% spike in dark mode adoption overnight. Today 82% of smartphone users prefer dark mode.",
+    xpReward: 160,
+    miniChallenge: {
+      type: "multipleChoice",
+      question:
+        "Which CSS feature lets you define a color once and reuse it everywhere, making theme switching possible without rewriting all your CSS?",
+      options: [
+        "CSS classes",
+        "CSS custom properties (variables)",
+        "CSS media queries",
+        "CSS animations",
+      ],
+      correctAnswer: "CSS custom properties (variables)",
+      explanation:
+        "CSS custom properties (--variable-name) are like constants for your stylesheet. Define them in :root and use var(--variable-name) everywhere. When you change the variable's value (e.g. by adding a .dark class), every element using that variable updates instantly. Without variables, you'd have to change every hardcoded color value individually — practically impossible to maintain.",
+    },
+  },
+
+  {
+    title: "SEO Optimization for Your Portfolio",
+    content:
+      "<p>Sneha deployed her portfolio and shared the link. But when she Googled 'Sneha Python developer Mumbai', her site was nowhere. Six months later, Ankit's portfolio — with proper SEO — appears in Google's top 3 results for his name. The only difference: meta tags and semantic HTML.</p>" +
+      "<p><strong>What is SEO?</strong> Search Engine Optimization tells Google and other search engines what your page is about, who it's for, and how to display it in search results. For a developer portfolio, good SEO means: (1) your name + 'developer' returns your site, (2) your LinkedIn preview shows a real title and description, (3) you appear in recruiter searches.</p>" +
+      "<p><strong>Step 1 — Core meta tags in &lt;head&gt;:</strong></p>" +
+      '<p><code>&lt;title&gt;Rahul Kumar — Python Developer & Full-Stack Engineer&lt;/title&gt; &lt;meta name="description" content="IT fresher with expertise in Python, Flask, SQL and AWS. Built 5+ real projects. Open to junior developer roles in Bengaluru."&gt; &lt;meta name="keywords" content="python developer, flask, SQL, AWS, fresher, full-stack, portfolio"&gt;</code></p>' +
+      "<p><strong>Step 2 — Open Graph tags for social sharing:</strong></p>" +
+      '<p><code>&lt;meta property="og:title" content="Rahul Kumar — Python Developer"&gt; &lt;meta property="og:description" content="Full-stack portfolio with Flask API, SQLite database and live Netlify deployment"&gt; &lt;meta property="og:image" content="https://yoursite.netlify.app/preview.png"&gt; &lt;meta property="og:url" content="https://yoursite.netlify.app"&gt;</code></p>' +
+      "<p>These tags control what appears when someone shares your link on LinkedIn, WhatsApp, or Twitter. Without them, those platforms show blank previews. <strong>Step 3 — Semantic HTML:</strong> Use <code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;footer&gt;</code> instead of generic <code>&lt;div&gt;</code> everywhere. Google uses these tags to understand page structure. Finally, add a <code>sitemap.xml</code> in your root with your portfolio URL — this tells Google to crawl your site faster.</p>",
+    funFact:
+      "Google processes over 8.5 billion searches per day. Being on the first page of results gets 10x more clicks than being on the second page. For developer portfolios, even a name search returning your site in the top 3 can be the difference between getting a callback or not.",
+    xpReward: 155,
+    miniChallenge: {
+      type: "multipleChoice",
+      question:
+        "Which HTML tag controls how your portfolio link appears when shared on LinkedIn or WhatsApp — showing a custom title, description and image preview?",
+      options: [
+        '&lt;meta name="keywords"&gt;',
+        '&lt;meta property="og:image"&gt;',
+        "Open Graph meta tags",
+        "&lt;title&gt; tag",
+      ],
+      correctAnswer: "Open Graph meta tags",
+      explanation:
+        "Open Graph (og:) meta tags are read by social platforms to generate link previews. og:title sets the preview title, og:description the caption, og:image the thumbnail. Without them, LinkedIn shows a blank card when someone shares your portfolio link — which looks unprofessional. All major platforms (LinkedIn, WhatsApp, Slack, Twitter) support Open Graph.",
+    },
+  },
+
+  {
+    title: "Making Your Portfolio Mobile-Responsive",
+    content:
+      "<p>Priya emails her portfolio link to a recruiter. The recruiter opens it on their phone during commute. The text is tiny, the project cards overflow the screen, and the navigation requires zooming in. The recruiter closes it immediately. Over 60% of web traffic is now mobile — a portfolio that isn't responsive is a portfolio that fails half its viewers.</p>" +
+      "<p><strong>Core concept: CSS Media Queries.</strong> A media query applies CSS rules only when the screen width matches a condition. The most common breakpoint: <code>@media (max-width: 768px) { ... }</code> — rules inside apply only on screens narrower than 768px (tablets and phones).</p>" +
+      '<p><strong>Step 1 — Set the viewport meta tag (required):</strong> <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code>. Without this, mobile browsers zoom out to fit the desktop layout — everything looks tiny. <strong>Step 2 — Make your project grid responsive:</strong></p>' +
+      "<p><code>.projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; } @media (max-width: 768px) { .projects-grid { grid-template-columns: 1fr; } }</code></p>" +
+      "<p>On desktop: 3 columns. On mobile: 1 column (full width). This is 5 lines of CSS. <strong>Step 3 — Flexible typography:</strong> <code>h1 { font-size: clamp(1.5rem, 5vw, 3rem); }</code>. The <code>clamp(min, preferred, max)</code> function makes font sizes fluid — they scale between 1.5rem and 3rem based on viewport width, no media query needed. <strong>Test it:</strong> Open Chrome DevTools, press Ctrl+Shift+M to toggle device toolbar. Test your portfolio at iPhone SE (375px), iPad (768px), and desktop (1280px). Every section should be readable and usable at all three breakpoints.</p>",
+    funFact:
+      "In 2016, Google switched to mobile-first indexing, meaning Google now crawls and ranks your site based on its mobile version, not desktop. A portfolio that breaks on mobile doesn't just frustrate users — it also ranks lower in Google search results.",
+    xpReward: 165,
+    miniChallenge: {
+      type: "fillInBlank",
+      question:
+        "Complete the media query to apply styles only on screens narrower than 768px: @media (max-width: ___px) { ... }",
+      correctAnswer: "768",
+      explanation:
+        "768px is the standard breakpoint for tablets and phones. Screens narrower than 768px are typically phones (320–414px) and small tablets. Common breakpoints: 480px (small phones), 768px (tablets), 1024px (small laptops), 1280px (desktop). Always test at real device sizes, not just arbitrary numbers.",
+    },
+  },
+
+  {
+    title: "Writing Unit Tests for Your Flask API",
+    content:
+      "<p>Rahul pushes a fix to his Flask API on a Friday afternoon. He didn't test one edge case — an empty message body on the contact form. By Monday, the contact form is broken and he doesn't know when it broke. In every MNC, this scenario is prevented by unit tests that run automatically on every push. Welcome to test-driven thinking.</p>" +
+      "<p><strong>Why testing matters in a corporate environment:</strong> At TCS, Infosys, Amazon — code with no tests doesn't get merged. Tests are documentation that never lies: they show exactly what your code is supposed to do and prove it actually does it. A suite of tests also lets you refactor fearlessly — if all tests pass after a change, the behavior is preserved.</p>" +
+      "<p><strong>Setting up pytest for Flask:</strong> <code>pip install pytest</code>. Create a file <code>test_app.py</code> in your project root. Flask has a built-in test client that lets you make real HTTP requests to your app without running a server:</p>" +
+      "<p><code>import pytest\nfrom app import app\n\n@pytest.fixture\ndef client():\n    app.config['TESTING'] = True\n    with app.test_client() as client:\n        yield client\n\ndef test_health_check(client):\n    response = client.get('/api/health')\n    assert response.status_code == 200\n\ndef test_get_skills_returns_list(client):\n    response = client.get('/api/skills')\n    assert response.status_code == 200\n    data = response.get_json()\n    assert isinstance(data, list)\n    assert len(data) &gt; 0\n\ndef test_contact_form_missing_fields_returns_400(client):\n    response = client.post('/api/contact', json={})\n    assert response.status_code == 400\n\ndef test_contact_form_valid_submission(client):\n    payload = {'name': 'Test', 'email': 'test@test.com', 'message': 'Hello'}\n    response = client.post('/api/contact', json=payload)\n    assert response.status_code == 200</code></p>" +
+      "<p>Run with: <code>pytest -v</code>. The <code>-v</code> flag shows each test name with pass/fail. Add your test command to GitHub Actions so tests run on every push — add <code>- run: pytest</code> to your CI workflow. If any test fails, the build is marked red and the broken code is caught before it reaches production.</p>",
+    funFact:
+      "Netflix runs over 4,000 automated tests before every production deployment. Amazon deploys new code every 11.7 seconds on average — only possible because automated tests catch regressions instantly. At Google, engineers write tests before writing the actual feature code (test-driven development, or TDD).",
+    xpReward: 170,
+    miniChallenge: {
+      type: "fillInBlank",
+      question:
+        "What command runs pytest and shows each test name with its pass/fail status?",
+      correctAnswer: "pytest -v",
+      explanation:
+        "pytest -v runs pytest in verbose mode, printing each test function name alongside PASSED or FAILED. Without -v, pytest just shows dots (.) for passed tests and F for failures — useful for large test suites. The -v flag is standard practice during development so you can see exactly which tests pass and which need fixing.",
+    },
+  },
+
+  {
+    title: "Monitoring and Logging Your Live App",
+    content:
+      "<p>Priya's portfolio backend on Render has been live for a week. A friend tries to submit the contact form and gets a 500 error. Priya has no idea — there's no alert, no email, no log she's been watching. In a corporate environment, silent failures cost thousands of dollars per minute. Monitoring and logging are non-negotiable production practices.</p>" +
+      "<p><strong>Part 1 — Logging in Flask:</strong> Python's built-in <code>logging</code> module sends structured messages to a log file or console. Add this to your <code>app.py</code>:</p>" +
+      "<p><code>import logging\nlogging.basicConfig(\n    level=logging.INFO,\n    format='%(asctime)s %(levelname)s %(name)s: %(message)s'\n)\nlogger = logging.getLogger(__name__)\n\n@app.route('/api/contact', methods=['POST'])\ndef contact():\n    try:\n        data = request.get_json()\n        logger.info(f\"Contact form received from {data.get('email')}\"  )\n        # ... process form ...\n        return jsonify({'status': 'ok'})\n    except Exception as e:\n        logger.error(f\"Contact form error: {e}\", exc_info=True)\n        return jsonify({'error': 'Internal error'}), 500</code></p>" +
+      "<p><strong>Log levels (memorize these):</strong> DEBUG — detailed diagnostic info (dev only). INFO — normal operations (request received, form submitted). WARNING — something unexpected but recoverable. ERROR — a function failed but the app continues. CRITICAL — app may crash. Only log ERROR or CRITICAL for unexpected failures. Log INFO for important business events (new contact form submission, user registered).</p>" +
+      "<p><strong>Part 2 — Uptime monitoring with UptimeRobot:</strong> Go to https://uptimerobot.com, create a free account, click 'Add New Monitor', choose 'HTTP(s)', enter your Render backend URL (e.g., <code>https://my-portfolio-api.onrender.com/api/health</code>), set check interval to 5 minutes. UptimeRobot pings your URL every 5 minutes and emails you within 2 minutes if it goes down. Free tier: 50 monitors. Add a <code>/api/health</code> endpoint to Flask that just returns <code>{\"status\": \"ok\"}</code> with a 200 — this is the URL UptimeRobot checks. To view your Render logs: go to Render Dashboard → your service → Logs tab. You'll see every print statement and log message in real time.</p>",
+    funFact:
+      "Amazon famously calculated that every 100ms of added latency costs them 1% in sales. Facebook's site reliability team monitors over 100 million metrics per second. Even for a personal project, uptime monitoring shows recruiters that you understand production engineering — not just development.",
+    xpReward: 175,
+    miniChallenge: {
+      type: "multipleChoice",
+      question:
+        "In Python's logging module, which log level should you use when an unexpected exception occurs in a function but the app can continue running?",
+      options: ["DEBUG", "INFO", "WARNING", "ERROR"],
+      correctAnswer: "ERROR",
+      explanation:
+        "ERROR is the correct level for unexpected exceptions that cause a function to fail. INFO is for normal operations (user submitted form). WARNING is for unexpected but handled situations (input was empty, using default value). DEBUG is for detailed internal state during development. CRITICAL is reserved for situations where the app itself may crash (database connection lost, out of disk space).",
+    },
+  },
 ];

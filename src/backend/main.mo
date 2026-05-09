@@ -22,17 +22,22 @@ import AdminTypes "types/admin";
 
 
 
+
+
 actor {
   let terms = List.empty<GlossaryTypes.Term>();
   let quizQuestions : [QuizTypes.QuizQuestion] = QuizLib.seedQuestions;
   let quizAttempts = Map.empty<CommonTypes.UserId, QuizTypes.QuizAttempt>();
   let progressMap = Map.empty<CommonTypes.UserId, ProgressTypes.UserProgress>();
   let subscriptions = Map.empty<CommonTypes.UserId, SubscriptionTypes.Subscription>();
+  let capstones = Map.empty<CommonTypes.UserId, SubscriptionTypes.CapstoneSubscription>();
   let certificateMap = Map.empty<Text, CertificateTypes.Certificate>();
   let signupMap = Map.empty<CommonTypes.UserId, CommonTypes.Timestamp>();
   let owner = { var principal : ?CommonTypes.UserId = null };
   let razorpayKeys = { var keyId : Text = "YOUR_RAZORPAY_KEY_ID"; var keySecret : Text = "YOUR_RAZORPAY_KEY_SECRET" };
   let courseCompletions = Map.empty<Text, List.List<AdminTypes.CourseCompletion>>();
+  let loginEvents = List.empty<AdminTypes.LoginEvent>();
+  let paymentRecords = List.empty<AdminTypes.PaymentRecord>();
 
   // Seed glossary terms once (guard prevents re-seeding on upgrade)
   if (terms.isEmpty()) {
@@ -43,7 +48,7 @@ actor {
   include GlossaryApi(terms);
   include QuizApi(quizQuestions, quizAttempts, progressMap);
   include ProgressApi(progressMap, certificateMap, signupMap);
-  include SubscriptionApi(subscriptions, razorpayKeys, owner);
+  include SubscriptionApi(subscriptions, capstones, razorpayKeys, owner, paymentRecords);
   include CertificateApi(certificateMap);
-  include AdminApi(owner, progressMap, subscriptions, signupMap, razorpayKeys, courseCompletions, certificateMap);
+  include AdminApi(owner, progressMap, subscriptions, capstones, signupMap, razorpayKeys, courseCompletions, certificateMap, loginEvents, paymentRecords);
 };

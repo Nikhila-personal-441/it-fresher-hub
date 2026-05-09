@@ -11,13 +11,23 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface AdminUserView {
+  'lastLoginAt' : Timestamp,
   'userId' : UserId,
   'lastActiveAt' : Timestamp,
+  'subscriptionPlan' : string,
   'coursesCompleted' : bigint,
+  'loginCount' : bigint,
   'subscriptionStatus' : string,
   'signupAt' : Timestamp,
   'userIdText' : string,
   'totalProgress' : number,
+}
+export interface CapstoneSubscriptionView {
+  'razorpayPaymentId' : [] | [string],
+  'activated' : boolean,
+  'activatedAt' : Timestamp,
+  'userId' : UserId,
+  'razorpayOrderId' : [] | [string],
 }
 export interface CertificateView {
   'id' : string,
@@ -59,6 +69,11 @@ export interface Lesson {
   'description' : string,
   'durationMinutes' : bigint,
 }
+export interface LoginEvent {
+  'userId' : UserId,
+  'timestamp' : Timestamp,
+  'userIdText' : string,
+}
 export type ModuleCategory = { 'dsa' : null } |
   { 'sql' : null } |
   { 'aiml' : null } |
@@ -90,6 +105,16 @@ export interface ModuleProgress {
   'completedAt' : [] | [Timestamp],
   'completed' : boolean,
 }
+export interface PaymentRecord {
+  'status' : string,
+  'userId' : UserId,
+  'plan' : string,
+  'orderId' : string,
+  'paymentId' : string,
+  'timestamp' : Timestamp,
+  'userIdText' : string,
+  'amount' : bigint,
+}
 export interface QuizAttempt {
   'userId' : UserId,
   'score' : bigint,
@@ -112,8 +137,11 @@ export interface StripeWebhookPayload {
   'eventType' : string,
 }
 export interface SubscriptionStats {
+  'recentSignups' : bigint,
+  'totalPayments' : bigint,
   'subscribedUsers' : bigint,
   'totalUsers' : bigint,
+  'totalRevenue' : bigint,
   'activeSubscriptions' : bigint,
 }
 export type SubscriptionStatus = { 'active' : null } |
@@ -142,23 +170,30 @@ export type UserId = Principal;
 export interface UserProgress {
   'lastQuizScore' : [] | [bigint],
   'userId' : UserId,
+  'streakDays' : bigint,
   'moduleProgress' : Array<ModuleProgress>,
   'lastQuizAttemptedAt' : [] | [Timestamp],
   'totalLearningHours' : bigint,
 }
 export interface _SERVICE {
+  'activateCapstoneWithRazorpay' : ActorMethod<[string, string], boolean>,
   'activateSubscriptionWithRazorpay' : ActorMethod<[string, string], boolean>,
+  'canAccessCapstone' : ActorMethod<[], boolean>,
   'canAccessLesson' : ActorMethod<[bigint], boolean>,
   'canAccessModule' : ActorMethod<[bigint], boolean>,
   'checkSubscription' : ActorMethod<[], [] | [SubscriptionView]>,
+  'createCapstoneOrder' : ActorMethod<[], RazorpayOrderResult>,
   'createRazorpayOrder' : ActorMethod<[], RazorpayOrderResult>,
   'getAllUsersAdmin' : ActorMethod<[], Array<AdminUserView>>,
+  'getCapstoneSubscription' : ActorMethod<[], [] | [CapstoneSubscriptionView]>,
   'getCertificate' : ActorMethod<[string], [] | [CertificateView]>,
   'getCourseCompletions' : ActorMethod<[], Array<CourseCompletion>>,
+  'getLoginEvents' : ActorMethod<[], Array<LoginEvent>>,
   'getModule' : ActorMethod<[bigint], [] | [ITModule]>,
   'getMyCertificates' : ActorMethod<[], Array<CertificateView>>,
   'getMyProgress' : ActorMethod<[], UserProgress>,
   'getMyQuizAttempt' : ActorMethod<[], [] | [QuizAttempt]>,
+  'getPaymentRecords' : ActorMethod<[], Array<PaymentRecord>>,
   'getSubscriptionStatsAdmin' : ActorMethod<[], SubscriptionStats>,
   'getTerm' : ActorMethod<[bigint], [] | [Term]>,
   'getTermsByCategory' : ActorMethod<[GlossaryCategory], Array<Term>>,
@@ -171,6 +206,7 @@ export interface _SERVICE {
   'listSubscribers' : ActorMethod<[], Array<SubscriptionView>>,
   'markCourseComplete' : ActorMethod<[string, string], CertificateView>,
   'markModuleCompleted' : ActorMethod<[bigint], undefined>,
+  'recordLoginEvent' : ActorMethod<[], undefined>,
   'searchGlossary' : ActorMethod<[string], Array<Term>>,
   'setOwner' : ActorMethod<[], undefined>,
   'setRazorpayKeys' : ActorMethod<[string, string], boolean>,

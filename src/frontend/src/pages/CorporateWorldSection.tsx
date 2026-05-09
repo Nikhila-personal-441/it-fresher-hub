@@ -1799,8 +1799,9 @@ export default function CorporateWorldSection() {
                             Upgrade to unlock
                           </p>
                           <p className="text-sm text-muted-foreground max-w-xs">
-                            Subscribe for ₹499 to read this lesson and unlock
-                            all {lessons.length} lessons in this section.
+                            Subscribe for ₹199 (lifetime) to read this lesson
+                            and unlock all {lessons.length} lessons in this
+                            section.
                           </p>
                         </div>
                         <Button
@@ -1840,8 +1841,8 @@ export default function CorporateWorldSection() {
                 Unlock the Full Section
               </h3>
               <p className="text-sm text-muted-foreground mb-2 max-w-md mx-auto">
-                Subscribe for ₹499 to unlock all {lessons.length} lessons, the
-                section quiz and earn a completion badge.
+                Subscribe for ₹199 (lifetime) to unlock all {lessons.length}{" "}
+                lessons, the section quiz and earn a completion badge.
               </p>
               <div className="flex flex-wrap justify-center gap-2 mb-6">
                 <span className="badge-subscription">
@@ -1850,7 +1851,7 @@ export default function CorporateWorldSection() {
 
                 <span className="badge-subscription">✓ Section badge</span>
                 <span className="badge-subscription">✓ Mini quiz</span>
-                <span className="badge-subscription">✓ 45 days access</span>
+                <span className="badge-subscription">✓ Lifetime access</span>
               </div>
               <Button
                 onClick={() => setPaywallOpen(true)}
