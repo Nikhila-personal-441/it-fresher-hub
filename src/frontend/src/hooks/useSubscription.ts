@@ -6,7 +6,7 @@
  * First module of every course is always free.
  * Subscription state is persisted in Firestore and cached in localStorage.
  *
- * Payment: Razorpay Payment Links (hosted by Razorpay).
+ * Payment: Razorpay Payment Links → auto-verified via Netlify serverless function.
  */
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +36,18 @@ export interface SubscriptionData {
   razorpayPaymentId?: string;
 }
 
+interface VerifyPaymentResponse {
+  verified: boolean;
+  paymentId?: string;
+  amount?: number;
+  currency?: string;
+  status?: string;
+  method?: string;
+  email?: string;
+  contact?: string;
+  error?: string;
+}
+
 interface UseSubscriptionReturn {
   isSubscribed: boolean;
   isAdmin: boolean;
@@ -46,14 +58,15 @@ interface UseSubscriptionReturn {
   initiateCheckout: () => void;
   /** Opens the ₹499 capstone payment link */
   initiateCapstoneCheckout: () => void;
-  /** Called after user confirms payment is done */
-  confirmPaymentComplete: (plan: "premium" | "capstone") => void;
+  /**
+   * Verify and activate subscription using Razorpay Payment ID.
+   * Calls server-side function to verify with Razorpay API.
+   * Returns error message if verification fails, or null on success.
+   */
+  verifyAndActivate: (paymentId: string, plan: "premium" | "capstone") => Promise<string | null>;
   refreshSubscription: () => void;
-  /** True when the upgrade flow needs the user to sign in first */
   showSignInForUpgrade: boolean;
-  /** Dismiss the sign-in-for-upgrade modal without proceeding */
   dismissSignInForUpgrade: () => void;
-  /** Trigger sign-in from the sign-in modal */
   proceedAfterSignIn: () => void;
 }
 
@@ -101,11 +114,7 @@ function saveSubscriptionLocal(data: SubscriptionData) {
   localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(data));
 }
 
-/**
- * Free access: first module only (moduleIndex === 0).
- * All other modules require subscription.
- * Admin users (isAdmin=true) always get full access.
- */
+/** Free access: first module only (moduleIndex === 0). */
 export function canAccessModule(
   moduleIndex: number,
   isSubscribed: boolean,
@@ -116,9 +125,7 @@ export function canAccessModule(
   return isSubscribed;
 }
 
-/** Lesson-level access: first 2 lessons free.
- * Admin users (isAdmin=true) always get full access.
- */
+/** Lesson-level access: first 2 lessons free. */
 export function canAccessLesson(
   lessonIndex: number,
   isSubscribed: boolean,
@@ -136,15 +143,11 @@ export function useSubscription(): UseSubscriptionReturn {
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const syncedFromBackend = useRef(false);
-  // Pending checkout after sign-in
   const pendingCheckout = useRef<"premium" | "capstone" | null>(null);
-  // Controls the explicit sign-in popup shown in the upgrade flow
   const [showSignInForUpgrade, setShowSignInForUpgrade] = useState(false);
-
-  // Admin bypass: admins always have full access without needing a subscription
   const { isAdmin } = useIsAdmin();
 
-  // Sync subscription status from Firestore on mount (once user is ready)
+  // Sync subscription status from Firestore on mount
   useEffect(() => {
     if (!user || syncedFromBackend.current) return;
     syncedFromBackend.current = true;
@@ -168,9 +171,7 @@ export function useSubscription(): UseSubscriptionReturn {
           }
         }
       })
-      .catch(() => {
-        /* Firestore unavailable — rely on localStorage */
-      });
+      .catch(() => {});
   }, [user]);
 
   // If user just signed in and there's a pending checkout, open the payment link
@@ -185,52 +186,73 @@ export function useSubscription(): UseSubscriptionReturn {
     }
   }, [isAuthenticated]);
 
-  /** Activate subscription after user confirms payment */
-  const confirmPaymentComplete = useCallback(
-    (plan: "premium" | "capstone") => {
-      const activatedAt = new Date().toISOString();
-      const expiresAt = computeExpiresAt(activatedAt);
-      const paymentId = `rzplink_${Date.now()}`;
+  /**
+   * Verify payment with Razorpay API (server-side) and activate subscription.
+   * Returns error message string on failure, null on success.
+   */
+  const verifyAndActivate = useCallback(
+    async (paymentId: string, plan: "premium" | "capstone"): Promise<string | null> => {
+      if (!user) return "Please sign in first.";
+      setIsLoading(true);
 
-      const newData: SubscriptionData = {
-        active: true,
-        activatedAt,
-        expiresAt,
-        plan: "premium",
-        razorpayPaymentId: paymentId,
-      };
+      try {
+        const expectedAmount = plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR;
 
-      // 1. Persist locally so UI unlocks immediately
-      saveSubscriptionLocal(newData);
-      setSubscriptionData(newData);
+        // Call our Netlify serverless function to verify with Razorpay
+        const response = await fetch("/api/verify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId: paymentId.trim(), expectedAmount }),
+        });
 
-      // 2. Persist to Firestore
-      if (user) {
-        activateSubscription(user.uid, {
-          razorpayOrderId: `rzplink_${plan}_${Date.now()}`,
-          razorpayPaymentId: paymentId,
+        const result: VerifyPaymentResponse = await response.json();
+
+        if (!result.verified) {
+          return result.error || "Payment verification failed. Please check your Payment ID.";
+        }
+
+        // Payment verified! Activate subscription
+        const activatedAt = new Date().toISOString();
+        const expiresAt = computeExpiresAt(activatedAt);
+
+        const newData: SubscriptionData = {
+          active: true,
+          activatedAt,
           expiresAt,
-        }).catch((err) => {
-          console.warn(
-            "[IT Fresher Hub] Failed to persist subscription to Firestore:",
-            err,
-          );
+          plan: "premium",
+          razorpayPaymentId: result.paymentId ?? paymentId,
+        };
+
+        // 1. Persist locally
+        saveSubscriptionLocal(newData);
+        setSubscriptionData(newData);
+
+        // 2. Persist to Firestore
+        await activateSubscription(user.uid, {
+          razorpayOrderId: `verified_${Date.now()}`,
+          razorpayPaymentId: result.paymentId ?? paymentId,
+          expiresAt,
         });
 
         // 3. Save payment record
-        savePayment({
+        await savePayment({
           userId: user.uid,
-          userEmail: user.email ?? "",
-          amount: plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR,
-          currency: "INR",
-          orderId: `rzplink_${plan}_${Date.now()}`,
-          paymentId,
+          userEmail: user.email ?? result.email ?? "",
+          amount: result.amount ?? expectedAmount,
+          currency: result.currency ?? "INR",
+          orderId: `verified_${Date.now()}`,
+          paymentId: result.paymentId ?? paymentId,
           status: "captured",
           plan: plan === "capstone" ? "capstone" : "lifetime",
           timestamp: null,
-        }).catch((err) => {
-          console.warn("[IT Fresher Hub] Failed to save payment record:", err);
         });
+
+        return null; // success
+      } catch (err) {
+        console.error("Payment verification error:", err);
+        return "Verification failed. Please try again or contact support.";
+      } finally {
+        setIsLoading(false);
       }
     },
     [user],
@@ -238,14 +260,33 @@ export function useSubscription(): UseSubscriptionReturn {
 
   const refreshSubscription = useCallback(() => {
     setIsLoading(true);
-    setTimeout(() => {
+    if (user) {
+      getSubscription(user.uid)
+        .then((sub) => {
+          if (sub && sub.status === "active") {
+            const expiresAt =
+              typeof sub.expiresAt === "string"
+                ? sub.expiresAt
+                : new Date(Number(sub.expiresAt)).toISOString();
+            const synced: SubscriptionData = {
+              active: true,
+              activatedAt: new Date().toISOString(),
+              expiresAt,
+              plan: "premium",
+            };
+            saveSubscriptionLocal(synced);
+            setSubscriptionData(synced);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsLoading(false));
+    } else {
       const data = loadSubscription();
       setSubscriptionData(data);
       setIsLoading(false);
-    }, 500);
-  }, []);
+    }
+  }, [user]);
 
-  /** Open premium ₹199 payment link */
   const initiateCheckout = useCallback(() => {
     if (!isAuthenticated) {
       pendingCheckout.current = "premium";
@@ -255,7 +296,6 @@ export function useSubscription(): UseSubscriptionReturn {
     window.open(PAYMENT_LINK_PREMIUM, "_blank", "noopener,noreferrer");
   }, [isAuthenticated]);
 
-  /** Open capstone ₹499 payment link */
   const initiateCapstoneCheckout = useCallback(() => {
     if (!isAuthenticated) {
       pendingCheckout.current = "capstone";
@@ -275,8 +315,6 @@ export function useSubscription(): UseSubscriptionReturn {
   }, []);
 
   const daysRemaining = computeDaysRemaining(subscriptionData.expiresAt);
-
-  // Admin users bypass the subscription requirement
   const effectiveIsSubscribed = isAdmin || subscriptionData.active;
 
   return {
@@ -287,7 +325,7 @@ export function useSubscription(): UseSubscriptionReturn {
     daysRemaining,
     initiateCheckout,
     initiateCapstoneCheckout,
-    confirmPaymentComplete,
+    verifyAndActivate,
     refreshSubscription,
     showSignInForUpgrade,
     dismissSignInForUpgrade,

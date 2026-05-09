@@ -225,12 +225,14 @@ export async function updateLearningHours(uid: string, hours: number) {
 
 export interface SubscriptionDoc {
   userId: string;
-  status: "active" | "inactive" | "cancelled";
+  status: "active" | "inactive" | "cancelled" | "pending_verification";
   plan: string;
   startDate: unknown;
   expiresAt: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  userEmail?: string;
+  submittedAt?: unknown;
 }
 
 export async function getSubscription(
@@ -240,6 +242,29 @@ export async function getSubscription(
   return snap.exists() ? (snap.data() as SubscriptionDoc) : null;
 }
 
+/** Submit a payment for admin verification (user-facing) */
+export async function submitPaymentForVerification(
+  uid: string,
+  data: {
+    razorpayPaymentId: string;
+    plan: string;
+    userEmail: string;
+    expiresAt: string;
+  },
+) {
+  await setDoc(doc(db, "subscriptions", uid), {
+    userId: uid,
+    status: "pending_verification",
+    plan: data.plan,
+    startDate: serverTimestamp(),
+    submittedAt: serverTimestamp(),
+    expiresAt: data.expiresAt,
+    razorpayPaymentId: data.razorpayPaymentId,
+    userEmail: data.userEmail,
+  });
+}
+
+/** Activate subscription (admin-only) */
 export async function activateSubscription(
   uid: string,
   data: {
@@ -256,6 +281,23 @@ export async function activateSubscription(
     expiresAt: data.expiresAt,
     razorpayOrderId: data.razorpayOrderId,
     razorpayPaymentId: data.razorpayPaymentId,
+  });
+}
+
+/** Admin: approve a pending subscription */
+export async function approveSubscription(uid: string) {
+  const ref = doc(db, "subscriptions", uid);
+  await updateDoc(ref, {
+    status: "active",
+    startDate: serverTimestamp(),
+  });
+}
+
+/** Admin: reject a pending subscription */
+export async function rejectSubscription(uid: string) {
+  const ref = doc(db, "subscriptions", uid);
+  await updateDoc(ref, {
+    status: "inactive",
   });
 }
 

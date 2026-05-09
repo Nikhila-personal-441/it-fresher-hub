@@ -18,6 +18,7 @@ import {
   Activity,
   BarChart3,
   BookOpen,
+  CheckCircle2,
   Clock,
   CreditCard,
   IndianRupee,
@@ -26,9 +27,16 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  approveSubscription,
+  rejectSubscription,
+} from "@/lib/firestoreService";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Tab = "users" | "logins" | "payments";
 
@@ -95,6 +103,12 @@ function statusBadge(status: string) {
       return (
         <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">
           Subscribed
+        </Badge>
+      );
+    case "pending_verification":
+      return (
+        <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs animate-pulse">
+          ⏳ Pending
         </Badge>
       );
     case "cancelled":
