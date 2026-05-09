@@ -1,4 +1,9 @@
 import { ALL_LESSON_CONTENT } from "@/data/lessonContent";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  markModuleComplete,
+  issueCertificate,
+} from "@/lib/firestoreService";
 import type { ITModule, LessonContent, ModuleCategory } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -547,14 +552,23 @@ export function useModule(id: string) {
 
 export function useMarkModuleCompleted() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (moduleId: string) => {
-      await new Promise((r) => setTimeout(r, 400));
+      if (!user) throw new Error("Not authenticated");
+      // Persist completion to Firestore
+      await markModuleComplete(user.uid, moduleId);
+      // Issue certificate for the completed module
+      const mod = MOCK_MODULES.find((m) => m.id === moduleId);
+      if (mod) {
+        await issueCertificate(user.uid, moduleId, mod.title);
+      }
       return moduleId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["modules"] });
       queryClient.invalidateQueries({ queryKey: ["progress"] });
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
     },
   });
 }

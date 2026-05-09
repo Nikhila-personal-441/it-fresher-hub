@@ -1,12 +1,11 @@
 {
-  "name": "@caffeine/template-frontend",
+  "name": "it-fresher-hub-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && pnpm copy:env",
-    "copy:env": "cp env.json dist/",
+    "build": "vite build",
     "typecheck": "tsc --noEmit",
     "check": "biome check src",
     "fix": "biome check --write src"
@@ -32,13 +31,7 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
-    "@caffeineai/core-infrastructure": "~0.1.0",
-    "@dfinity/agent": "~3.3.0",
-    "@dfinity/auth-client": "~3.3.0",
-    "@dfinity/candid": "~3.3.0",
-    "@dfinity/identity": "~3.3.0",
-    "@dfinity/principal": "~3.3.0",
-    "@icp-sdk/core": "~4.1.0",
+    "firebase": "^11.0.0",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-aspect-ratio": "^1.1.0",

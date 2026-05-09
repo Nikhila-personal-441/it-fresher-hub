@@ -1,7 +1,23 @@
 import type { CertificateView } from "@/backend.d";
 
-function formatDate(ts: bigint): string {
-  return new Date(Number(ts) / 1_000_000).toLocaleDateString("en-IN", {
+function toDate(ts: unknown): Date {
+  if (ts === null || ts === undefined) return new Date(0);
+  if (ts instanceof Date) return ts;
+  if (typeof ts === "object" && ts !== null && "toDate" in ts) {
+    return (ts as { toDate: () => Date }).toDate();
+  }
+  if (typeof ts === "bigint") {
+    const n = Number(ts);
+    return new Date(n > 1e15 ? n / 1_000_000 : n);
+  }
+  if (typeof ts === "number") {
+    return new Date(ts > 1e15 ? ts / 1_000_000 : ts);
+  }
+  return new Date(String(ts));
+}
+
+function formatDate(ts: unknown): string {
+  return toDate(ts).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -160,7 +176,7 @@ export function downloadCertificateAsPdf(
       </div>
       <div class="meta-item">
         <div class="meta-label">Platform</div>
-        <div class="meta-value">caffeine.ai</div>
+        <div class="meta-value">IT Fresher Hub</div>
       </div>
     </div>
     <div class="seal">🏆</div>
@@ -349,7 +365,7 @@ export function downloadInternCertificateAsPdf(
       </div>
       <div class="meta-item">
         <div class="meta-label">Platform</div>
-        <div class="meta-value">caffeine.ai</div>
+        <div class="meta-value">IT Fresher Hub</div>
       </div>
     </div>
     <div class="seal">🎓</div>

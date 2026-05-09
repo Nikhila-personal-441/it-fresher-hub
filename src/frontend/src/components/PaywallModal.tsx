@@ -137,7 +137,7 @@ export function PaywallModal({
               data-ocid="upgrade-signin-btn"
             >
               <KeyRound className="w-5 h-5" />
-              Sign in with Internet Identity
+              Sign In to Continue
             </Button>
             <Button
               variant="ghost"

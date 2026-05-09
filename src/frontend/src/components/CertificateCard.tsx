@@ -3,8 +3,24 @@ import { Button } from "@/components/ui/button";
 import { Award, Calendar, Download, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 
-function formatDate(ts: bigint): string {
-  return new Date(Number(ts) / 1_000_000).toLocaleDateString("en-IN", {
+function toDate(ts: unknown): Date {
+  if (ts === null || ts === undefined) return new Date(0);
+  if (ts instanceof Date) return ts;
+  if (typeof ts === "object" && ts !== null && "toDate" in ts) {
+    return (ts as { toDate: () => Date }).toDate();
+  }
+  if (typeof ts === "bigint") {
+    const n = Number(ts);
+    return new Date(n > 1e15 ? n / 1_000_000 : n);
+  }
+  if (typeof ts === "number") {
+    return new Date(ts > 1e15 ? ts / 1_000_000 : ts);
+  }
+  return new Date(String(ts));
+}
+
+function formatDate(ts: unknown): string {
+  return toDate(ts).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",

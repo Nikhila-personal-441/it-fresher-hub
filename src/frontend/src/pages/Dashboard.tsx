@@ -16,7 +16,7 @@ import {
   getCategoryColor,
 } from "@/lib/formatters";
 import { downloadCertificateAsPdf } from "@/lib/pdfDownload";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -173,7 +173,7 @@ export default function Dashboard() {
   const { isSubscribed, daysRemaining } = useSubscription();
   const { data: certificates } = useCertificates();
 
-  const { loginStatus } = useInternetIdentity();
+  const { loginStatus } = useAuth();
   const _isAuthenticated = loginStatus === "success";
   const [activeTab, setActiveTab] = useState<"overview" | "certificates">(
     "overview",

@@ -1,4 +1,4 @@
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   createContext,
   useCallback,
@@ -25,8 +25,7 @@ const SignInGateContext = createContext<SignInGateContextValue>({
 });
 
 export function SignInGateProvider({ children }: { children: ReactNode }) {
-  const { loginStatus } = useInternetIdentity();
-  const isAuthenticated = loginStatus === "success";
+  const { isAuthenticated } = useAuth();
   // Always start closed — no auto-trigger on mount
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [isDismissible, setIsDismissible] = useState(false);

@@ -7,7 +7,7 @@ import { useProgress } from "@/hooks/useProgress";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatMinutes, getCategoryColor } from "@/lib/formatters";
 import type { ITModule, ModuleCategory } from "@/types";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link, useSearch } from "@tanstack/react-router";
 import {
   BookOpen,
@@ -357,8 +357,8 @@ export default function CoursesHub() {
   const [paywallOpen, setPaywallOpen] = useState(false);
   const { isSubscribed, isAdmin, initiateCheckout } = useSubscription();
   const hasAccess = isSubscribed || isAdmin;
-  const { identity } = useInternetIdentity();
-  const userId = identity?.getPrincipal().toText() ?? "";
+  const { user } = useAuth();
+  const userId = user?.uid ?? "";
   const { data: progressData } = useProgress();
   const completedModuleIds = new Set(progressData?.completedModules ?? []);
 

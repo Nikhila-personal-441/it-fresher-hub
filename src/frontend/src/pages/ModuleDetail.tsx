@@ -20,7 +20,7 @@ import {
   downloadInternCertificateAsPdf,
 } from "@/lib/pdfDownload";
 import type { LessonProgress, ModuleLessonProgress } from "@/types";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -225,8 +225,8 @@ export default function ModuleDetail() {
   const moduleId = id ?? "";
 
   // Get user identity for per-account progress isolation
-  const { identity } = useInternetIdentity();
-  const userId = identity?.getPrincipal().toText() ?? "";
+  const { user } = useAuth();
+  const userId = user?.uid ?? "";
 
   const { data: mod, isLoading } = useModule(moduleId);
   const lessons = useModuleLessons(moduleId);

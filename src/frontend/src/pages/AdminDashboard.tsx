@@ -33,16 +33,34 @@ import { useEffect, useState } from "react";
 type Tab = "users" | "logins" | "payments";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
-function formatDate(ts: bigint): string {
-  return new Date(Number(ts) / 1_000_000).toLocaleDateString("en-IN", {
+/** Convert any timestamp (Firestore, bigint-nanos, Date, string) into a Date */
+function toDate(ts: unknown): Date {
+  if (ts === null || ts === undefined) return new Date(0);
+  if (ts instanceof Date) return ts;
+  if (typeof ts === "object" && ts !== null && "toDate" in ts) {
+    return (ts as { toDate: () => Date }).toDate();
+  }
+  if (typeof ts === "bigint") {
+    const n = Number(ts);
+    // ICP nanosecond timestamps are > 1e15
+    return new Date(n > 1e15 ? n / 1_000_000 : n);
+  }
+  if (typeof ts === "number") {
+    return new Date(ts > 1e15 ? ts / 1_000_000 : ts);
+  }
+  return new Date(String(ts));
+}
+
+function formatDate(ts: unknown): string {
+  return toDate(ts).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-function formatDateTime(ts: bigint): string {
-  const d = new Date(Number(ts) / 1_000_000);
+function formatDateTime(ts: unknown): string {
+  const d = toDate(ts);
   return `${d.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -50,8 +68,8 @@ function formatDateTime(ts: bigint): string {
   })} ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-function formatRelative(ts: bigint): string {
-  const ms = Date.now() - Number(ts) / 1_000_000;
+function formatRelative(ts: unknown): string {
+  const ms = Date.now() - toDate(ts).getTime();
   const mins = Math.floor(ms / 60_000);
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
@@ -60,7 +78,7 @@ function formatRelative(ts: bigint): string {
   return `${days}d ago`;
 }
 
-function formatRupees(paise: bigint): string {
+function formatRupees(paise: bigint | number): string {
   return `₹${(Number(paise) / 100).toLocaleString("en-IN")}`;
 }
 
@@ -175,16 +193,16 @@ function TableSkeleton({
 // ── Helpers for login aggregation ────────────────────────────────────────
 function aggregateLoginCounts(
   events: LoginEvent[],
-): Map<string, { count: number; lastAt: bigint }> {
-  const map = new Map<string, { count: number; lastAt: bigint }>();
+): Map<string, { count: number; lastAt: unknown }> {
+  const map = new Map<string, { count: number; lastAt: unknown }>();
   for (const e of events) {
-    const key = e.userIdText;
+    const key = e.userIdText ?? e.userId;
     const existing = map.get(key);
     if (!existing) {
       map.set(key, { count: 1, lastAt: e.timestamp });
     } else {
       existing.count += 1;
-      if (e.timestamp > existing.lastAt) existing.lastAt = e.timestamp;
+      if (typeof e.timestamp === "bigint" && typeof existing.lastAt === "bigint" && e.timestamp > existing.lastAt) existing.lastAt = e.timestamp;
     }
   }
   return map;
@@ -216,7 +234,7 @@ export default function AdminDashboard() {
   const totalUsers = stats ? Number(stats.totalUsers) : (users?.length ?? 0);
   const subscribedU = stats ? Number(stats.subscribedUsers) : 0;
   const activeSubs = stats ? Number(stats.activeSubscriptions) : 0;
-  const totalRevenue = stats ? stats.totalRevenue : 0n;
+  const totalRevenue = stats ? Number(stats.totalRevenue) : 0;
   const totalPayments = stats
     ? Number(stats.totalPayments)
     : paymentRecords.length;
@@ -230,10 +248,10 @@ export default function AdminDashboard() {
 
   // Total revenue from payment records as fallback
   const displayRevenue =
-    totalRevenue > 0n
+    totalRevenue > 0
       ? formatRupees(totalRevenue)
       : paymentRecords.length > 0
-        ? formatRupees(paymentRecords.reduce((acc, r) => acc + r.amount, 0n))
+        ? formatRupees(paymentRecords.reduce((acc, r) => acc + Number(r.amount), 0))
         : "₹0";
 
   return (
@@ -550,7 +568,7 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                       {loginEvents.map((event: LoginEvent, i: number) => {
-                        const agg = loginAggregates.get(event.userIdText);
+                        const agg = loginAggregates.get(event.userIdText ?? event.userId);
                         return (
                           <motion.tr
                             key={`${event.userIdText}-${event.timestamp}`}
@@ -565,7 +583,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="p-4">
                               <code className="text-xs text-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-                                {event.userIdText.slice(0, 14)}…
+                                {(event.userIdText ?? event.userId).slice(0, 14)}…
                               </code>
                             </td>
                             <td className="p-4">
@@ -634,9 +652,9 @@ export default function AdminDashboard() {
                         {paymentRecords.length > 0
                           ? formatRupees(
                               paymentRecords.reduce(
-                                (a, r) => a + r.amount,
-                                0n,
-                              ) / BigInt(paymentRecords.length),
+                                (a, r) => a + Number(r.amount),
+                                0,
+                              ) / paymentRecords.length,
                             )
                           : "₹0"}
                       </p>
@@ -680,7 +698,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="p-4">
                               <code className="text-xs text-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-                                {record.userIdText.slice(0, 14)}…
+                                {(record.userIdText ?? record.userId).slice(0, 14)}…
                               </code>
                             </td>
                             <td className="p-4">

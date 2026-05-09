@@ -9,7 +9,8 @@ import {
 import { useMarkModuleCompleted } from "@/hooks/useModules";
 import { useSubscription } from "@/hooks/useSubscription";
 import { downloadInternCertificateAsPdf } from "@/lib/pdfDownload";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { saveCertificateNotification } from "@/lib/firestoreService";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   CheckCircle2,
   Clock,
@@ -1289,7 +1290,7 @@ export default function CapstoneProject() {
   const { data: certificates } = useCertificates();
   const invalidateCertificates = useCertificateQueryClient();
   const markCompleted = useMarkModuleCompleted();
-  const { identity } = useInternetIdentity();
+  const { user } = useAuth();
   const certTriggered = useRef(false);
 
   const capstoneCert = certificates?.find(
@@ -1306,11 +1307,46 @@ export default function CapstoneProject() {
     }
   }, [allStepsCompleted, invalidateCertificates, markCompleted]);
 
+  // When the capstone certificate is available, show the modal
+  // and send the internship certificate notification to email/phone
+  const certNotificationSent = useRef(false);
   useEffect(() => {
     if (allStepsCompleted && capstoneCert && !certModalOpen) {
       setCertModalOpen(true);
     }
-  }, [allStepsCompleted, capstoneCert, certModalOpen]);
+    // Send notification once when cert is issued
+    if (capstoneCert && user && !certNotificationSent.current) {
+      certNotificationSent.current = true;
+      const recipient = user.email || user.phoneNumber || "";
+      saveCertificateNotification({
+        userId: user.uid,
+        recipientEmail: user.email ?? undefined,
+        recipientPhone: user.phoneNumber ?? undefined,
+        certificateId: capstoneCert.id,
+        courseName: capstoneCert.courseName,
+        verificationCode: capstoneCert.verificationCode,
+        deliveryMethod: user.email ? "email" : "sms",
+      }).catch(() => {});
+
+      // If user has email, open mailto link with certificate info
+      if (user.email) {
+        const subject = encodeURIComponent(
+          `🎓 Your Internship Certificate — ${capstoneCert.courseName}`,
+        );
+        const body = encodeURIComponent(
+          `Congratulations!\n\nYou have successfully completed the Capstone Project at IT Fresher Hub.\n\n` +
+          `Certificate: ${capstoneCert.courseName}\n` +
+          `Verification Code: ${capstoneCert.verificationCode}\n\n` +
+          `You can download your internship certificate from the IT Fresher Hub dashboard.\n\n` +
+          `— IT Fresher Hub Team`,
+        );
+        // Open mailto silently — does not navigate away
+        const a = document.createElement("a");
+        a.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
+        a.click();
+      }
+    }
+  }, [allStepsCompleted, capstoneCert, certModalOpen, user]);
 
   const toggleStepComplete = (stepNum: number) => {
     if (!isSubscribed && !isAdmin) return;
@@ -1333,8 +1369,8 @@ export default function CapstoneProject() {
     }
   }
 
-  const userName = identity
-    ? `${(identity.getPrincipal().toText()[0] ?? "L").toUpperCase()}earner`
+  const userName = user?.displayName
+    ? user.displayName
     : "Learner";
 
   return (

@@ -1,6 +1,11 @@
-import { createActor } from "@/backend";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getProgress,
+  markModuleComplete as fsMarkModuleComplete,
+  saveProgress,
+  updateLearningHours as fsUpdateLearningHours,
+} from "@/lib/firestoreService";
 import type { UserProgress } from "@/types";
-import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const emptyProgress: UserProgress = {
@@ -21,40 +26,36 @@ function resolveLevel(completed: number): UserProgress["level"] {
 }
 
 export function useProgress() {
-  const { actor, isFetching } = useActor(createActor);
+  const { user, isAuthenticated } = useAuth();
   return useQuery<UserProgress>({
-    queryKey: ["progress"],
+    queryKey: ["progress", user?.uid],
     queryFn: async () => {
-      if (!actor) {
-        return emptyProgress;
-      }
-      const raw = await actor.getMyProgress();
-      // Map backend UserProgress → frontend UserProgress
-      const completedModules = raw.moduleProgress
-        .filter((mp) => mp.completed)
-        .map((mp) => String(mp.moduleId));
+      if (!user) return emptyProgress;
+      const progress = await getProgress(user.uid);
+      if (!progress) return { ...emptyProgress, userId: user.uid };
+      const completedModules = progress.completedModules || [];
       return {
-        userId: raw.userId.toString(),
+        userId: user.uid,
         completedModules,
-        totalLearningHours: Number(raw.totalLearningHours),
+        totalLearningHours: progress.totalLearningHours || 0,
         quizScores: [],
         lastActiveAt: BigInt(Date.now()),
-        streakDays: Number(raw.streakDays),
+        streakDays: progress.streakDays || 0,
         level: resolveLevel(completedModules.length),
       };
     },
-    enabled: !!actor && !isFetching,
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
   });
 }
 
 export function useUpdateLearningHours() {
-  const { actor } = useActor(createActor);
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (hours: number) => {
-      if (!actor) return;
-      await actor.updateLearningHours(BigInt(Math.round(hours)));
+      if (!user) return;
+      await fsUpdateLearningHours(user.uid, hours);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress"] });

@@ -6,7 +6,7 @@ import { useSignInGate } from "@/contexts/SignInGateContext";
 import { useIsAdmin } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   BookMarked,
@@ -98,7 +98,7 @@ interface LayoutProps {
 
 export function Layout({ children, isLoggedIn = false }: LayoutProps) {
   const location = useLocation();
-  const { clear, identity } = useInternetIdentity();
+  const { logout, user } = useAuth();
   const { isSubscribed } = useSubscription();
   const { isAdmin } = useIsAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -123,9 +123,9 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [profileDropdownOpen]);
 
-  // First letter of the user's principal for the avatar
-  const principalInitial = identity
-    ? (identity.getPrincipal().toText()[0] ?? "U").toUpperCase()
+  // First letter of the user's email/name for the avatar
+  const principalInitial = user
+    ? (user.displayName?.[0] ?? user.email?.[0] ?? "U").toUpperCase()
     : "U";
 
   // Nav items — admin link only shown to admin users
@@ -268,7 +268,7 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
                     background:
                       "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
                   }}
-                  title={identity?.getPrincipal().toText()}
+                  title={user?.email ?? ""}
                 >
                   {principalInitial}
                 </div>
@@ -282,7 +282,7 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      clear();
+                      logout();
                       setProfileDropdownOpen(false);
                     }}
                     data-ocid="btn-logout"
@@ -367,7 +367,7 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
                     background:
                       "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
                   }}
-                  title={identity?.getPrincipal().toText()}
+                  title={user?.email ?? ""}
                   aria-label="Profile menu"
                   aria-expanded={profileDropdownOpen}
                 >
@@ -379,7 +379,7 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        clear();
+                        logout();
                         setProfileDropdownOpen(false);
                       }}
                       data-ocid="header-btn-logout"
@@ -426,15 +426,8 @@ export function Layout({ children, isLoggedIn = false }: LayoutProps) {
               Contact Support
             </a>
           </div>
-          © {new Date().getFullYear()}. Built with love using{" "}
-          <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            caffeine.ai
-          </a>
+          © {new Date().getFullYear()} IT Fresher Hub. Built with ❤️ for
+          aspiring IT professionals.
         </footer>
       </div>
     </div>

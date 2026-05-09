@@ -2,17 +2,10 @@ import { fileURLToPath, URL } from "url";
 import { resolve } from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import environment from "vite-plugin-environment";
+
 import { VitePWA } from "vite-plugin-pwa";
 
-const ii_url =
-  process.env.DFX_NETWORK === "local"
-    ? `http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:8081/`
-    : `https://identity.internetcomputer.org/`;
 
-process.env.II_URL = process.env.II_URL || ii_url;
-process.env.STORAGE_GATEWAY_URL =
-  process.env.STORAGE_GATEWAY_URL || "https://blob.caffeine.ai";
 
 export default defineConfig({
   logLevel: "error",
@@ -32,22 +25,14 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:4943",
-        changeOrigin: true,
-      },
-    },
+    port: 5173,
   },
   plugins: [
-    environment("all", { prefix: "CANISTER_" }),
-    environment("all", { prefix: "DFX_" }),
-    environment(["II_URL"]),
-    environment(["STORAGE_GATEWAY_URL"]),
     react(),
-    // Generate real PNG icon files at build time — required for PWABuilder APK generation
+    // Generate real PNG icon files at build time only — skip in dev for fast startup
     {
       name: "generate-pwa-icons",
+      apply: "build",
       async buildStart() {
         const { generatePNG } = await import("./scripts/create-pwa-icons.mjs");
         const iconsDir = resolve("./public/icons");
@@ -143,6 +128,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
@@ -188,6 +174,6 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("./src", import.meta.url)),
       },
     ],
-    dedupe: ["@dfinity/agent"],
+    dedupe: [],
   },
 });

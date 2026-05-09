@@ -4,15 +4,19 @@
  * Subscription: ₹199 lifetime access (no expiry).
  * Capstone add-on: ₹499 (separate one-time purchase).
  * First module of every course is always free.
- * Subscription state is persisted in localStorage and verified against backend.
+ * Subscription state is persisted in Firestore and cached in localStorage.
  *
  * Payment provider: Razorpay Standard Checkout.
  * Set VITE_RAZORPAY_KEY_ID in .env to enable live payments.
  */
 
-import { createActor } from "@/backend";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useAuth";
-import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
+import {
+  activateSubscription,
+  getSubscription,
+  savePayment,
+} from "@/lib/firestoreService";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 declare global {
@@ -54,7 +58,7 @@ interface UseSubscriptionReturn {
   showSignInForUpgrade: boolean;
   /** Dismiss the sign-in-for-upgrade modal without proceeding */
   dismissSignInForUpgrade: () => void;
-  /** Trigger Internet Identity login from the sign-in modal */
+  /** Trigger sign-in from the sign-in modal */
   proceedAfterSignIn: () => void;
 }
 
@@ -98,7 +102,7 @@ function loadSubscription(): SubscriptionData {
   return { active: false, activatedAt: null, expiresAt: null, plan: "free" };
 }
 
-function saveSubscription(data: SubscriptionData) {
+function saveSubscriptionLocal(data: SubscriptionData) {
   localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(data));
 }
 
@@ -150,9 +154,7 @@ export function useSubscription(): UseSubscriptionReturn {
     () => loadSubscription(),
   );
   const [isLoading, setIsLoading] = useState(false);
-  const { actor } = useActor(createActor);
-  const { login, loginStatus } = useInternetIdentity();
-  const isAuthenticated = loginStatus === "success";
+  const { user, isAuthenticated, login } = useAuth();
   const syncedFromBackend = useRef(false);
   // Pending checkout after sign-in
   const pendingCheckout = useRef(false);
@@ -162,47 +164,34 @@ export function useSubscription(): UseSubscriptionReturn {
   // Admin bypass: admins always have full access without needing a subscription
   const { isAdmin } = useIsAdmin();
 
-  // Record login event when user first authenticates (once per session)
-  const loginRecorded = useRef(false);
+  // Sync subscription status from Firestore on mount (once user is ready)
   useEffect(() => {
-    if (!actor || !isAuthenticated || loginRecorded.current) return;
-    loginRecorded.current = true;
-    actor.recordLoginEvent().catch(() => {
-      /* best-effort — ignore errors */
-    });
-  }, [actor, isAuthenticated]);
-
-  // Sync subscription status from backend canister on mount (once actor is ready)
-  useEffect(() => {
-    if (!actor || syncedFromBackend.current) return;
+    if (!user || syncedFromBackend.current) return;
     syncedFromBackend.current = true;
-    actor
-      .checkSubscription()
-      .then((view) => {
-        if (view && view.status === "active") {
-          const activatedAt = new Date(
-            Number(view.startDate) / 1_000_000,
-          ).toISOString();
-          const expiresAt = new Date(
-            Number(view.expiresAt) / 1_000_000,
-          ).toISOString();
+    getSubscription(user.uid)
+      .then((sub) => {
+        if (sub && sub.status === "active") {
+          const expiresAt =
+            typeof sub.expiresAt === "string"
+              ? sub.expiresAt
+              : new Date(Number(sub.expiresAt)).toISOString();
           const remaining = computeDaysRemaining(expiresAt);
           if (remaining !== null && remaining > 0) {
             const synced: SubscriptionData = {
               active: true,
-              activatedAt,
+              activatedAt: new Date().toISOString(),
               expiresAt,
               plan: "premium",
             };
-            saveSubscription(synced);
+            saveSubscriptionLocal(synced);
             setSubscriptionData(synced);
           }
         }
       })
       .catch(() => {
-        /* backend unavailable — rely on localStorage */
+        /* Firestore unavailable — rely on localStorage */
       });
-  }, [actor]);
+  }, [user]);
 
   // If user just signed in and there's a pending checkout, close the sign-in modal
   // and proceed directly to Razorpay
@@ -218,34 +207,48 @@ export function useSubscription(): UseSubscriptionReturn {
   const activateAfterPayment = useCallback(
     (payload: RazorpaySuccessPayload) => {
       const activatedAt = new Date().toISOString();
+      const expiresAt = computeExpiresAt(activatedAt);
       const newData: SubscriptionData = {
         active: true,
         activatedAt,
-        expiresAt: computeExpiresAt(activatedAt),
+        expiresAt,
         plan: "premium",
         razorpayPaymentId: payload.razorpay_payment_id,
       };
       // 1. Persist locally so UI unlocks immediately
-      saveSubscription(newData);
+      saveSubscriptionLocal(newData);
       setSubscriptionData(newData);
 
-      // 2. Persist to backend canister so subscription survives logout/login
-      if (actor) {
-        actor
-          .activateSubscriptionWithRazorpay(
-            payload.razorpay_order_id,
-            payload.razorpay_payment_id,
-          )
-          .catch((err) => {
-            console.warn(
-              "[IT Fresher Hub] Failed to persist subscription to backend:",
-              err,
-            );
-            // localStorage already saved — content is unlocked; backend sync can be retried on next login
-          });
+      // 2. Persist to Firestore
+      if (user) {
+        activateSubscription(user.uid, {
+          razorpayOrderId: payload.razorpay_order_id,
+          razorpayPaymentId: payload.razorpay_payment_id,
+          expiresAt,
+        }).catch((err) => {
+          console.warn(
+            "[IT Fresher Hub] Failed to persist subscription to Firestore:",
+            err,
+          );
+        });
+
+        // 3. Save payment record
+        savePayment({
+          userId: user.uid,
+          userEmail: user.email ?? "",
+          amount: PRICE_INR,
+          currency: "INR",
+          orderId: payload.razorpay_order_id,
+          paymentId: payload.razorpay_payment_id,
+          status: "captured",
+          plan: "lifetime",
+          timestamp: null,
+        }).catch((err) => {
+          console.warn("[IT Fresher Hub] Failed to save payment record:", err);
+        });
       }
     },
-    [actor],
+    [user],
   );
 
   const refreshSubscription = useCallback(() => {
@@ -291,7 +294,10 @@ export function useSubscription(): UseSubscriptionReturn {
       description: "Lifetime Full Access",
       image: "/logo.png",
       theme: { color: "#6d28d9" },
-      prefill: {},
+      prefill: {
+        email: user?.email ?? undefined,
+        contact: user?.phoneNumber ?? undefined,
+      },
       handler: (response: RazorpaySuccessPayload) => {
         activateAfterPayment(response);
       },
@@ -302,7 +308,7 @@ export function useSubscription(): UseSubscriptionReturn {
       },
     });
     rzp.open();
-  }, [activateAfterPayment]);
+  }, [activateAfterPayment, user]);
 
   const initiateCheckout = useCallback(async () => {
     // If the user is not signed in, show the explicit sign-in popup.
@@ -321,10 +327,10 @@ export function useSubscription(): UseSubscriptionReturn {
   }, []);
 
   const proceedAfterSignIn = useCallback(() => {
-    // Trigger Internet Identity; once signed in the useEffect above closes
-    // the modal and opens Razorpay automatically.
-    login?.();
-  }, [login]);
+    // The sign-in modal (SignInPromptModal) handles the login flow.
+    // Once signed in, the useEffect above closes the modal and opens Razorpay.
+    setShowSignInForUpgrade(false);
+  }, []);
 
   const daysRemaining = computeDaysRemaining(subscriptionData.expiresAt);
 

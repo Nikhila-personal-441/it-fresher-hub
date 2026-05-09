@@ -3,8 +3,8 @@ import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { SignInPromptModal } from "@/components/SignInPromptModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignInGateProvider } from "@/contexts/SignInGateContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useAuth";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   Outlet,
   RouterProvider,
@@ -47,13 +47,12 @@ function PageLoader() {
 }
 
 function AdminGuard() {
-  const { loginStatus } = useInternetIdentity();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isAdmin, isLoading } = useIsAdmin();
   const navigate = useNavigate({ from: "/admin" });
 
   // Still determining auth or identity state — show loader, never redirect
-  const authPending =
-    loginStatus === "idle" || loginStatus === "logging-in" || isLoading;
+  const authPending = authLoading || isLoading;
 
   if (authPending) {
     return <PageLoader />;
@@ -72,12 +71,11 @@ function AdminGuard() {
 }
 
 function AppLayout() {
-  const { loginStatus } = useInternetIdentity();
-  const isLoggedIn = loginStatus === "success";
+  const { isAuthenticated } = useAuth();
 
   return (
     <SignInGateProvider>
-      <Layout isLoggedIn={isLoggedIn}>
+      <Layout isLoggedIn={isAuthenticated}>
         <Suspense fallback={<PageLoader />}>
           <Outlet />
         </Suspense>
