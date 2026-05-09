@@ -17,12 +17,12 @@ import {
   BookOpen,
   CheckCircle2,
   Crown,
+  ExternalLink,
   KeyRound,
   Loader2,
   Lock,
   Shield,
   Sparkles,
-  Wrench,
   X,
   Zap,
 } from "lucide-react";
@@ -58,15 +58,6 @@ const PREMIUM_BENEFITS = [
   },
 ];
 
-const isRazorpayConfigured = () => {
-  const key = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
-  return (
-    typeof key === "string" &&
-    key.length > 0 &&
-    !key.startsWith("your_razorpay")
-  );
-};
-
 export function PaywallModal({
   open,
   onOpenChange,
@@ -74,30 +65,33 @@ export function PaywallModal({
 }: PaywallModalProps) {
   const {
     initiateCheckout,
+    initiateCapstoneCheckout,
+    confirmPaymentComplete,
     isLoading,
     showSignInForUpgrade,
     dismissSignInForUpgrade,
     proceedAfterSignIn,
   } = useSubscription();
   const [agreed, setAgreed] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const razorpayReady = isRazorpayConfigured();
+  const [paymentPending, setPaymentPending] = useState<"premium" | "capstone" | null>(null);
 
-  const handleSubscribe = async () => {
+  const handlePayNow = () => {
     if (!agreed) return;
-    setPaymentError(null);
-    if (!razorpayReady) {
-      setPaymentError(
-        "Payment is not yet configured. Please contact support or try again later.",
-      );
-      return;
-    }
-    try {
-      await initiateCheckout();
-      // Razorpay overlay takes over; modal stays open behind it
-    } catch {
-      setPaymentError("Payment could not be initiated. Please try again.");
-    }
+    initiateCheckout();
+    setPaymentPending("premium");
+  };
+
+  const handleCapstonePayNow = () => {
+    if (!agreed) return;
+    initiateCapstoneCheckout();
+    setPaymentPending("capstone");
+  };
+
+  const handleConfirmPayment = () => {
+    if (!paymentPending) return;
+    confirmPaymentComplete(paymentPending);
+    setPaymentPending(null);
+    onOpenChange(false);
   };
 
   return (
@@ -266,32 +260,6 @@ export function PaywallModal({
             </p>
           </div>
 
-          {/* Payment not configured notice */}
-          {!razorpayReady && (
-            <div
-              className="mx-6 mb-3 p-3 rounded-lg border border-amber-400/30 bg-amber-400/8 flex items-start gap-2"
-              data-ocid="paywall-demo-notice"
-            >
-              <Wrench className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 leading-snug">
-                <strong>Payment not configured.</strong> Razorpay key is not set
-                up. Contact the administrator to enable payments.
-              </p>
-            </div>
-          )}
-
-          {/* Payment error */}
-          {paymentError && (
-            <div
-              className="mx-6 mb-3 p-3 rounded-lg border border-destructive/30 bg-destructive/8"
-              data-ocid="paywall-error-state"
-            >
-              <p className="text-xs text-destructive font-medium">
-                {paymentError}
-              </p>
-            </div>
-          )}
-
           {/* CTA buttons */}
           <div className="px-6 pb-6 space-y-3">
             {/* Agreement checkbox */}
@@ -312,48 +280,92 @@ export function PaywallModal({
               </label>
             </div>
 
-            <Button
-              className="w-full gap-2 font-bold py-5 text-base rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all disabled:opacity-50"
-              onClick={handleSubscribe}
-              disabled={isLoading || !agreed}
-              data-ocid="btn-subscribe-now"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Crown className="w-5 h-5" />
-              )}
-              Subscribe for ₹{PRICE_INR} · Lifetime Access
-            </Button>
-            {/* Capstone add-on upsell */}
-            <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-3 text-xs text-amber-700 mb-1">
-              <p className="font-bold mb-0.5">
-                🎓 Capstone Project Add-on — ₹{CAPSTONE_PRICE_INR}
-              </p>
-              <p className="text-amber-600 leading-snug">
-                Unlock the full 22-step Capstone Project with certificate.
-                Available separately after your base subscription.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-foreground"
-              onClick={() => onOpenChange(false)}
-              data-ocid="btn-paywall-dismiss"
-            >
-              Maybe later — stay on free plan
-            </Button>
-            <div className="text-center pt-1">
-              <a
-                href="mailto:itfreshershub@gmail.com?subject=IT%20Fresher%20Hub%20Support&body=Hi%20Team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
-                data-ocid="paywall-contact-support"
-              >
-                Need help? Contact Support
-              </a>
-            </div>
+            {/* Payment pending state — user clicked Pay, waiting for confirmation */}
+            {paymentPending ? (
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg border border-amber-400/40 bg-amber-400/8">
+                  <p className="text-xs text-amber-700 font-medium mb-1">
+                    💳 Payment page opened in a new tab
+                  </p>
+                  <p className="text-xs text-amber-600 leading-snug">
+                    Complete your ₹{paymentPending === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR} payment on Razorpay, then
+                    click the button below to activate your access.
+                  </p>
+                </div>
+                <Button
+                  className="w-full gap-2 font-bold py-5 text-base rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all"
+                  onClick={handleConfirmPayment}
+                  data-ocid="btn-confirm-payment"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  I've Completed Payment — Activate Access
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setPaymentPending(null)}
+                >
+                  ← Go back
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  className="w-full gap-2 font-bold py-5 text-base rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all disabled:opacity-50"
+                  onClick={handlePayNow}
+                  disabled={isLoading || !agreed}
+                  data-ocid="btn-subscribe-now"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Crown className="w-5 h-5" />
+                  )}
+                  Pay ₹{PRICE_INR} · Unlock Premium
+                  <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-60" />
+                </Button>
+
+                {/* Capstone add-on upsell */}
+                <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-3 text-xs text-amber-700 mb-1">
+                  <p className="font-bold mb-0.5">
+                    🎓 Capstone Project Add-on — ₹{CAPSTONE_PRICE_INR}
+                  </p>
+                  <p className="text-amber-600 leading-snug mb-2">
+                    Unlock the full 22-step Capstone Project with internship certificate.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs border-amber-400/40 text-amber-700 hover:bg-amber-400/15"
+                    onClick={handleCapstonePayNow}
+                    disabled={!agreed}
+                  >
+                    Pay ₹{CAPSTONE_PRICE_INR} · Capstone
+                    <ExternalLink className="w-3 h-3 opacity-60" />
+                  </Button>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground hover:text-foreground"
+                  onClick={() => onOpenChange(false)}
+                  data-ocid="btn-paywall-dismiss"
+                >
+                  Maybe later — stay on free plan
+                </Button>
+                <div className="text-center pt-1">
+                  <a
+                    href="mailto:itfreshershub@gmail.com?subject=IT%20Fresher%20Hub%20Support&body=Hi%20Team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+                    data-ocid="paywall-contact-support"
+                  >
+                    Need help? Contact Support
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

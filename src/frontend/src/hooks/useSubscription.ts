@@ -6,8 +6,7 @@
  * First module of every course is always free.
  * Subscription state is persisted in Firestore and cached in localStorage.
  *
- * Payment provider: Razorpay Standard Checkout.
- * Set VITE_RAZORPAY_KEY_ID in .env to enable live payments.
+ * Payment: Razorpay Payment Links (hosted by Razorpay).
  */
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,17 +18,15 @@ import {
 } from "@/lib/firestoreService";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open(): void };
-  }
-}
-
 const SUBSCRIPTION_KEY = "itfresherhub_subscription_v2";
 export const PRICE_INR = 199;
 export const CAPSTONE_PRICE_INR = 499;
-/** Lifetime plan — no expiry. Set to a large number so countdown logic never shows "expired" for active subscribers. */
+/** Lifetime plan — no expiry */
 export const SUBSCRIPTION_DAYS = 36500;
+
+/** Razorpay hosted payment links */
+export const PAYMENT_LINK_PREMIUM = "https://rzp.io/rzp/Fh1vv6rd";
+export const PAYMENT_LINK_CAPSTONE = "https://rzp.io/rzp/1qfWI2Kk";
 
 export interface SubscriptionData {
   active: boolean;
@@ -39,21 +36,19 @@ export interface SubscriptionData {
   razorpayPaymentId?: string;
 }
 
-interface RazorpaySuccessPayload {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
 interface UseSubscriptionReturn {
   isSubscribed: boolean;
   isAdmin: boolean;
   isLoading: boolean;
   subscriptionData: SubscriptionData;
   daysRemaining: number | null;
+  /** Opens the ₹199 premium payment link */
   initiateCheckout: () => void;
+  /** Opens the ₹499 capstone payment link */
+  initiateCapstoneCheckout: () => void;
+  /** Called after user confirms payment is done */
+  confirmPaymentComplete: (plan: "premium" | "capstone") => void;
   refreshSubscription: () => void;
-  activateAfterPayment: (payload: RazorpaySuccessPayload) => void;
   /** True when the upgrade flow needs the user to sign in first */
   showSignInForUpgrade: boolean;
   /** Dismiss the sign-in-for-upgrade modal without proceeding */
@@ -106,21 +101,6 @@ function saveSubscriptionLocal(data: SubscriptionData) {
   localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(data));
 }
 
-function loadRazorpayScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
-    document.head.appendChild(script);
-  });
-}
-
 /**
  * Free access: first module only (moduleIndex === 0).
  * All other modules require subscription.
@@ -154,10 +134,10 @@ export function useSubscription(): UseSubscriptionReturn {
     () => loadSubscription(),
   );
   const [isLoading, setIsLoading] = useState(false);
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const syncedFromBackend = useRef(false);
   // Pending checkout after sign-in
-  const pendingCheckout = useRef(false);
+  const pendingCheckout = useRef<"premium" | "capstone" | null>(null);
   // Controls the explicit sign-in popup shown in the upgrade flow
   const [showSignInForUpgrade, setShowSignInForUpgrade] = useState(false);
 
@@ -193,28 +173,33 @@ export function useSubscription(): UseSubscriptionReturn {
       });
   }, [user]);
 
-  // If user just signed in and there's a pending checkout, close the sign-in modal
-  // and proceed directly to Razorpay
+  // If user just signed in and there's a pending checkout, open the payment link
   useEffect(() => {
     if (isAuthenticated && pendingCheckout.current) {
-      pendingCheckout.current = false;
+      const plan = pendingCheckout.current;
+      pendingCheckout.current = null;
       setShowSignInForUpgrade(false);
-      void openRazorpay();
+      const link =
+        plan === "capstone" ? PAYMENT_LINK_CAPSTONE : PAYMENT_LINK_PREMIUM;
+      window.open(link, "_blank", "noopener,noreferrer");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  const activateAfterPayment = useCallback(
-    (payload: RazorpaySuccessPayload) => {
+  /** Activate subscription after user confirms payment */
+  const confirmPaymentComplete = useCallback(
+    (plan: "premium" | "capstone") => {
       const activatedAt = new Date().toISOString();
       const expiresAt = computeExpiresAt(activatedAt);
+      const paymentId = `rzplink_${Date.now()}`;
+
       const newData: SubscriptionData = {
         active: true,
         activatedAt,
         expiresAt,
         plan: "premium",
-        razorpayPaymentId: payload.razorpay_payment_id,
+        razorpayPaymentId: paymentId,
       };
+
       // 1. Persist locally so UI unlocks immediately
       saveSubscriptionLocal(newData);
       setSubscriptionData(newData);
@@ -222,8 +207,8 @@ export function useSubscription(): UseSubscriptionReturn {
       // 2. Persist to Firestore
       if (user) {
         activateSubscription(user.uid, {
-          razorpayOrderId: payload.razorpay_order_id,
-          razorpayPaymentId: payload.razorpay_payment_id,
+          razorpayOrderId: `rzplink_${plan}_${Date.now()}`,
+          razorpayPaymentId: paymentId,
           expiresAt,
         }).catch((err) => {
           console.warn(
@@ -236,12 +221,12 @@ export function useSubscription(): UseSubscriptionReturn {
         savePayment({
           userId: user.uid,
           userEmail: user.email ?? "",
-          amount: PRICE_INR,
+          amount: plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR,
           currency: "INR",
-          orderId: payload.razorpay_order_id,
-          paymentId: payload.razorpay_payment_id,
+          orderId: `rzplink_${plan}_${Date.now()}`,
+          paymentId,
           status: "captured",
-          plan: "lifetime",
+          plan: plan === "capstone" ? "capstone" : "lifetime",
           timestamp: null,
         }).catch((err) => {
           console.warn("[IT Fresher Hub] Failed to save payment record:", err);
@@ -260,81 +245,38 @@ export function useSubscription(): UseSubscriptionReturn {
     }, 500);
   }, []);
 
-  const openRazorpay = useCallback(async () => {
-    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID as
-      | string
-      | undefined;
-    const isConfigured =
-      typeof razorpayKey === "string" &&
-      razorpayKey.length > 0 &&
-      !razorpayKey.startsWith("your_razorpay");
-
-    if (!isConfigured) {
-      console.warn(
-        "[IT Fresher Hub] Razorpay key not configured. Payment skipped in demo mode. No access granted.",
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await loadRazorpayScript();
-    } catch {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(false);
-
-    const rzp = new window.Razorpay({
-      key: razorpayKey,
-      amount: 19900,
-      currency: "INR",
-      name: "IT Fresher Hub",
-      description: "Lifetime Full Access",
-      image: "/logo.png",
-      theme: { color: "#6d28d9" },
-      prefill: {
-        email: user?.email ?? undefined,
-        contact: user?.phoneNumber ?? undefined,
-      },
-      handler: (response: RazorpaySuccessPayload) => {
-        activateAfterPayment(response);
-      },
-      modal: {
-        ondismiss: () => {
-          setIsLoading(false);
-        },
-      },
-    });
-    rzp.open();
-  }, [activateAfterPayment, user]);
-
-  const initiateCheckout = useCallback(async () => {
-    // If the user is not signed in, show the explicit sign-in popup.
-    // pendingCheckout ensures Razorpay opens automatically after successful sign-in.
+  /** Open premium ₹199 payment link */
+  const initiateCheckout = useCallback(() => {
     if (!isAuthenticated) {
-      pendingCheckout.current = true;
+      pendingCheckout.current = "premium";
       setShowSignInForUpgrade(true);
       return;
     }
-    await openRazorpay();
-  }, [isAuthenticated, openRazorpay]);
+    window.open(PAYMENT_LINK_PREMIUM, "_blank", "noopener,noreferrer");
+  }, [isAuthenticated]);
+
+  /** Open capstone ₹499 payment link */
+  const initiateCapstoneCheckout = useCallback(() => {
+    if (!isAuthenticated) {
+      pendingCheckout.current = "capstone";
+      setShowSignInForUpgrade(true);
+      return;
+    }
+    window.open(PAYMENT_LINK_CAPSTONE, "_blank", "noopener,noreferrer");
+  }, [isAuthenticated]);
 
   const dismissSignInForUpgrade = useCallback(() => {
-    pendingCheckout.current = false;
+    pendingCheckout.current = null;
     setShowSignInForUpgrade(false);
   }, []);
 
   const proceedAfterSignIn = useCallback(() => {
-    // The sign-in modal (SignInPromptModal) handles the login flow.
-    // Once signed in, the useEffect above closes the modal and opens Razorpay.
     setShowSignInForUpgrade(false);
   }, []);
 
   const daysRemaining = computeDaysRemaining(subscriptionData.expiresAt);
 
-  // Admin users bypass the subscription requirement — they always have full access
+  // Admin users bypass the subscription requirement
   const effectiveIsSubscribed = isAdmin || subscriptionData.active;
 
   return {
@@ -344,8 +286,9 @@ export function useSubscription(): UseSubscriptionReturn {
     subscriptionData,
     daysRemaining,
     initiateCheckout,
+    initiateCapstoneCheckout,
+    confirmPaymentComplete,
     refreshSubscription,
-    activateAfterPayment,
     showSignInForUpgrade,
     dismissSignInForUpgrade,
     proceedAfterSignIn,
