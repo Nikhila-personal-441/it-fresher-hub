@@ -6,7 +6,9 @@
  * First module of every course is always free.
  * Subscription state is persisted in Firestore and cached in localStorage.
  *
- * Payment: Razorpay Payment Links → auto-verified via Netlify serverless function.
+ * Payment: Razorpay Checkout SDK (in-app popup).
+ * After payment success, the payment is auto-verified via a Netlify
+ * serverless function, then the subscription is activated instantly.
  */
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,15 +20,17 @@ import {
 } from "@/lib/firestoreService";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => { open(): void };
+  }
+}
+
 const SUBSCRIPTION_KEY = "itfresherhub_subscription_v2";
 export const PRICE_INR = 199;
 export const CAPSTONE_PRICE_INR = 499;
 /** Lifetime plan — no expiry */
 export const SUBSCRIPTION_DAYS = 36500;
-
-/** Razorpay hosted payment links */
-export const PAYMENT_LINK_PREMIUM = "https://rzp.io/rzp/Fh1vv6rd";
-export const PAYMENT_LINK_CAPSTONE = "https://rzp.io/rzp/1qfWI2Kk";
 
 export interface SubscriptionData {
   active: boolean;
@@ -36,38 +40,23 @@ export interface SubscriptionData {
   razorpayPaymentId?: string;
 }
 
-interface VerifyPaymentResponse {
-  verified: boolean;
-  paymentId?: string;
-  amount?: number;
-  currency?: string;
-  status?: string;
-  method?: string;
-  email?: string;
-  contact?: string;
-  error?: string;
-}
-
 interface UseSubscriptionReturn {
   isSubscribed: boolean;
   isAdmin: boolean;
   isLoading: boolean;
   subscriptionData: SubscriptionData;
   daysRemaining: number | null;
-  /** Opens the ₹199 premium payment link */
+  /** Opens Razorpay Checkout for ₹199 premium */
   initiateCheckout: () => void;
-  /** Opens the ₹499 capstone payment link */
+  /** Opens Razorpay Checkout for ₹499 capstone */
   initiateCapstoneCheckout: () => void;
-  /**
-   * Verify and activate subscription using Razorpay Payment ID.
-   * Calls server-side function to verify with Razorpay API.
-   * Returns error message if verification fails, or null on success.
-   */
-  verifyAndActivate: (paymentId: string, plan: "premium" | "capstone") => Promise<string | null>;
   refreshSubscription: () => void;
   showSignInForUpgrade: boolean;
   dismissSignInForUpgrade: () => void;
   proceedAfterSignIn: () => void;
+  /** Error message from last payment attempt */
+  paymentError: string | null;
+  clearPaymentError: () => void;
 }
 
 function computeExpiresAt(activatedAt: string): string {
@@ -105,7 +94,7 @@ function loadSubscription(): SubscriptionData {
       return data;
     }
   } catch {
-    // ignore parse errors
+    // ignore
   }
   return { active: false, activatedAt: null, expiresAt: null, plan: "free" };
 }
@@ -114,7 +103,22 @@ function saveSubscriptionLocal(data: SubscriptionData) {
   localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(data));
 }
 
-/** Free access: first module only (moduleIndex === 0). */
+function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+    document.head.appendChild(script);
+  });
+}
+
+/** Free access: first module only */
 export function canAccessModule(
   moduleIndex: number,
   isSubscribed: boolean,
@@ -125,7 +129,7 @@ export function canAccessModule(
   return isSubscribed;
 }
 
-/** Lesson-level access: first 2 lessons free. */
+/** Lesson-level access: first 2 lessons free */
 export function canAccessLesson(
   lessonIndex: number,
   isSubscribed: boolean,
@@ -141,13 +145,14 @@ export function useSubscription(): UseSubscriptionReturn {
     () => loadSubscription(),
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const syncedFromBackend = useRef(false);
   const pendingCheckout = useRef<"premium" | "capstone" | null>(null);
   const [showSignInForUpgrade, setShowSignInForUpgrade] = useState(false);
   const { isAdmin } = useIsAdmin();
 
-  // Sync subscription status from Firestore on mount
+  // Sync from Firestore on mount
   useEffect(() => {
     if (!user || syncedFromBackend.current) return;
     syncedFromBackend.current = true;
@@ -174,89 +179,184 @@ export function useSubscription(): UseSubscriptionReturn {
       .catch(() => {});
   }, [user]);
 
-  // If user just signed in and there's a pending checkout, open the payment link
+  const activateAfterVerifiedPayment = useCallback(
+    async (args: {
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      plan: "premium" | "capstone";
+      amountInr: number;
+      status?: string;
+    }) => {
+      if (!user) return;
+
+      const activatedAt = new Date().toISOString();
+      const expiresAt = computeExpiresAt(activatedAt);
+
+      const newData: SubscriptionData = {
+        active: true,
+        activatedAt,
+        expiresAt,
+        plan: "premium",
+        razorpayPaymentId: args.razorpayPaymentId,
+      };
+
+      saveSubscriptionLocal(newData);
+      setSubscriptionData(newData);
+
+      activateSubscription(user.uid, {
+        razorpayOrderId: args.razorpayOrderId,
+        razorpayPaymentId: args.razorpayPaymentId,
+        expiresAt,
+      }).catch((e) => console.warn("Failed to save subscription:", e));
+
+      savePayment({
+        userId: user.uid,
+        userEmail: user.email ?? "",
+        amount: args.amountInr,
+        currency: "INR",
+        orderId: args.razorpayOrderId,
+        paymentId: args.razorpayPaymentId,
+        status: args.status ?? "captured",
+        plan: args.plan === "capstone" ? "capstone" : "lifetime",
+        timestamp: null,
+      }).catch((e) => console.warn("Failed to save payment:", e));
+    },
+    [user],
+  );
+
+  /** Open Razorpay Checkout popup */
+  const openRazorpay = useCallback(
+    async (plan: "premium" | "capstone") => {
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
+      if (!razorpayKey || razorpayKey === "your_razorpay_key_id") {
+        setPaymentError("Payment is not configured yet. Please contact support.");
+        return;
+      }
+
+      setIsLoading(true);
+      setPaymentError(null);
+
+      try {
+        await loadRazorpayScript();
+      } catch {
+        setPaymentError("Failed to load payment system. Please refresh and try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      const amount = plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR;
+      let orderId: string | null = null;
+      try {
+        const orderRes = await fetch("/api/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            currency: "INR",
+            plan,
+            userId: user?.uid ?? null,
+            userEmail: user?.email ?? null,
+          }),
+        });
+        const orderJson = await orderRes.json();
+        if (!orderRes.ok || !orderJson?.orderId) {
+          throw new Error(orderJson?.error || "Failed to create Razorpay order");
+        }
+        orderId = String(orderJson.orderId);
+      } catch {
+        setPaymentError("Could not start payment. Please try again in a moment.");
+        setIsLoading(false);
+        return;
+      }
+
+      const rzp = new window.Razorpay({
+        key: razorpayKey,
+        amount: amount * 100, // Razorpay expects paise
+        currency: "INR",
+        order_id: orderId,
+        name: "IT Fresher Hub",
+        description: plan === "capstone"
+          ? "Capstone Project — Full Access + Certificate"
+          : "Premium — Lifetime Full Access",
+        image: "/favicon.ico",
+        theme: { color: "#6d28d9" },
+        prefill: {
+          email: user?.email ?? undefined,
+          name: user?.displayName ?? undefined,
+        },
+        handler: (response: { razorpay_payment_id: string; razorpay_order_id?: string; razorpay_signature?: string }) => {
+          setIsLoading(true);
+          const razorpayOrderId = response.razorpay_order_id || orderId || "";
+          const razorpaySignature = response.razorpay_signature || "";
+          fetch("/api/verify-razorpay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              plan,
+              expectedAmount: amount,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId,
+              razorpaySignature,
+            }),
+          })
+            .then(async (r) => {
+              const j = await r.json();
+              if (!r.ok || !j?.verified) {
+                throw new Error(j?.error || "Payment verification failed");
+              }
+              await activateAfterVerifiedPayment({
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId,
+                plan,
+                amountInr: amount,
+                status: j?.status,
+              });
+            })
+            .catch(() => {
+              setPaymentError("Verification failed. If money was deducted, please contact support with your payment details.");
+            })
+            .finally(() => setIsLoading(false));
+        },
+        modal: {
+          ondismiss: () => {
+            setIsLoading(false);
+          },
+        },
+      });
+
+      setIsLoading(false);
+      rzp.open();
+    },
+    [activateAfterVerifiedPayment, user],
+  );
+
+  // If user just signed in and checkout was pending, open Razorpay immediately
   useEffect(() => {
     if (isAuthenticated && pendingCheckout.current) {
       const plan = pendingCheckout.current;
       pendingCheckout.current = null;
       setShowSignInForUpgrade(false);
-      const link =
-        plan === "capstone" ? PAYMENT_LINK_CAPSTONE : PAYMENT_LINK_PREMIUM;
-      window.open(link, "_blank", "noopener,noreferrer");
+      void openRazorpay(plan);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, openRazorpay]);
 
-  /**
-   * Verify payment with Razorpay API (server-side) and activate subscription.
-   * Returns error message string on failure, null on success.
-   */
-  const verifyAndActivate = useCallback(
-    async (paymentId: string, plan: "premium" | "capstone"): Promise<string | null> => {
-      if (!user) return "Please sign in first.";
-      setIsLoading(true);
+  const initiateCheckout = useCallback(() => {
+    if (!isAuthenticated) {
+      pendingCheckout.current = "premium";
+      setShowSignInForUpgrade(true);
+      return;
+    }
+    void openRazorpay("premium");
+  }, [isAuthenticated, openRazorpay]);
 
-      try {
-        const expectedAmount = plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR;
-
-        // Call our Netlify serverless function to verify with Razorpay
-        const response = await fetch("/api/verify-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId: paymentId.trim(), expectedAmount }),
-        });
-
-        const result: VerifyPaymentResponse = await response.json();
-
-        if (!result.verified) {
-          return result.error || "Payment verification failed. Please check your Payment ID.";
-        }
-
-        // Payment verified! Activate subscription
-        const activatedAt = new Date().toISOString();
-        const expiresAt = computeExpiresAt(activatedAt);
-
-        const newData: SubscriptionData = {
-          active: true,
-          activatedAt,
-          expiresAt,
-          plan: "premium",
-          razorpayPaymentId: result.paymentId ?? paymentId,
-        };
-
-        // 1. Persist locally
-        saveSubscriptionLocal(newData);
-        setSubscriptionData(newData);
-
-        // 2. Persist to Firestore
-        await activateSubscription(user.uid, {
-          razorpayOrderId: `verified_${Date.now()}`,
-          razorpayPaymentId: result.paymentId ?? paymentId,
-          expiresAt,
-        });
-
-        // 3. Save payment record
-        await savePayment({
-          userId: user.uid,
-          userEmail: user.email ?? result.email ?? "",
-          amount: result.amount ?? expectedAmount,
-          currency: result.currency ?? "INR",
-          orderId: `verified_${Date.now()}`,
-          paymentId: result.paymentId ?? paymentId,
-          status: "captured",
-          plan: plan === "capstone" ? "capstone" : "lifetime",
-          timestamp: null,
-        });
-
-        return null; // success
-      } catch (err) {
-        console.error("Payment verification error:", err);
-        return "Verification failed. Please try again or contact support.";
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [user],
-  );
+  const initiateCapstoneCheckout = useCallback(() => {
+    if (!isAuthenticated) {
+      pendingCheckout.current = "capstone";
+      setShowSignInForUpgrade(true);
+      return;
+    }
+    void openRazorpay("capstone");
+  }, [isAuthenticated, openRazorpay]);
 
   const refreshSubscription = useCallback(() => {
     setIsLoading(true);
@@ -281,29 +381,10 @@ export function useSubscription(): UseSubscriptionReturn {
         .catch(() => {})
         .finally(() => setIsLoading(false));
     } else {
-      const data = loadSubscription();
-      setSubscriptionData(data);
+      setSubscriptionData(loadSubscription());
       setIsLoading(false);
     }
   }, [user]);
-
-  const initiateCheckout = useCallback(() => {
-    if (!isAuthenticated) {
-      pendingCheckout.current = "premium";
-      setShowSignInForUpgrade(true);
-      return;
-    }
-    window.open(PAYMENT_LINK_PREMIUM, "_blank", "noopener,noreferrer");
-  }, [isAuthenticated]);
-
-  const initiateCapstoneCheckout = useCallback(() => {
-    if (!isAuthenticated) {
-      pendingCheckout.current = "capstone";
-      setShowSignInForUpgrade(true);
-      return;
-    }
-    window.open(PAYMENT_LINK_CAPSTONE, "_blank", "noopener,noreferrer");
-  }, [isAuthenticated]);
 
   const dismissSignInForUpgrade = useCallback(() => {
     pendingCheckout.current = null;
@@ -313,6 +394,8 @@ export function useSubscription(): UseSubscriptionReturn {
   const proceedAfterSignIn = useCallback(() => {
     setShowSignInForUpgrade(false);
   }, []);
+
+  const clearPaymentError = useCallback(() => setPaymentError(null), []);
 
   const daysRemaining = computeDaysRemaining(subscriptionData.expiresAt);
   const effectiveIsSubscribed = isAdmin || subscriptionData.active;
@@ -325,11 +408,12 @@ export function useSubscription(): UseSubscriptionReturn {
     daysRemaining,
     initiateCheckout,
     initiateCapstoneCheckout,
-    verifyAndActivate,
     refreshSubscription,
     showSignInForUpgrade,
     dismissSignInForUpgrade,
     proceedAfterSignIn,
+    paymentError,
+    clearPaymentError,
   };
 }
 

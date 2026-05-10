@@ -28,7 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface PaywallModalProps {
   open: boolean;
@@ -67,51 +67,38 @@ export function PaywallModal({
   const {
     initiateCheckout,
     initiateCapstoneCheckout,
-    verifyAndActivate,
     isLoading,
     showSignInForUpgrade,
     dismissSignInForUpgrade,
     proceedAfterSignIn,
+    isSubscribed,
+    paymentError,
+    clearPaymentError,
   } = useSubscription();
   const [agreed, setAgreed] = useState(false);
-  const [step, setStep] = useState<"choose" | "verify" | "success">("choose");
+  const [step, setStep] = useState<"choose" | "processing" | "success">("choose");
   const [paymentPlan, setPaymentPlan] = useState<"premium" | "capstone">("premium");
-  const [paymentId, setPaymentId] = useState("");
-  const [error, setError] = useState("");
-  const [verifying, setVerifying] = useState(false);
 
   const handlePayNow = (plan: "premium" | "capstone") => {
     if (!agreed) return;
     setPaymentPlan(plan);
+    clearPaymentError();
     if (plan === "capstone") {
       initiateCapstoneCheckout();
     } else {
       initiateCheckout();
     }
-    setStep("verify");
+    setStep("processing");
   };
 
-  const handleVerifyPayment = async () => {
-    if (!paymentId.trim()) {
-      setError("Please enter your Razorpay Payment ID.");
-      return;
-    }
-    setError("");
-    setVerifying(true);
-    const errorMsg = await verifyAndActivate(paymentId.trim(), paymentPlan);
-    setVerifying(false);
-    if (errorMsg) {
-      setError(errorMsg);
-    } else {
-      setStep("success");
-    }
-  };
+  useEffect(() => {
+    if (!open) return;
+    if (isSubscribed) setStep("success");
+  }, [isSubscribed, open]);
 
   const resetModal = () => {
     setStep("choose");
-    setPaymentId("");
-    setError("");
-    setVerifying(false);
+    clearPaymentError();
   };
 
   return (
@@ -260,34 +247,20 @@ export function PaywallModal({
           )}
 
           {/* ─── Step: Verify payment ─── */}
-          {step === "verify" && (
+          {step === "processing" && (
             <div className="px-6 py-6 space-y-4">
               <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
-                <p className="text-xs text-foreground font-medium mb-1">💳 Payment page opened in a new tab</p>
+                <p className="text-xs text-foreground font-medium mb-1">💳 Complete payment in Razorpay</p>
                 <p className="text-xs text-muted-foreground leading-snug">
                   Complete your ₹{paymentPlan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR} payment on Razorpay.
-                  After successful payment, you'll see a <strong>Payment ID</strong> (starts with <code className="font-mono bg-muted px-1 py-0.5 rounded text-foreground">pay_</code>). Enter it below for instant verification.
+                  After successful payment, we’ll verify it automatically and unlock your content instantly.
                 </p>
               </div>
 
-              <div>
-                <label htmlFor="payment-id" className="text-xs font-medium text-muted-foreground mb-1 block">Razorpay Payment ID</label>
-                <input
-                  id="payment-id"
-                  type="text"
-                  value={paymentId}
-                  onChange={(e) => setPaymentId(e.target.value)}
-                  placeholder="pay_XXXXXXXXXX"
-                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                  disabled={verifying}
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Find this on the Razorpay success page or in your email/SMS receipt.
+              {paymentError && (
+                <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">
+                  {paymentError}
                 </p>
-              </div>
-
-              {error && (
-                <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">{error}</p>
               )}
 
               <div className="flex items-center gap-2 bg-green-500/8 border border-green-500/20 rounded-lg px-3 py-2">
@@ -298,21 +271,12 @@ export function PaywallModal({
               </div>
 
               <Button
-                className="w-full gap-2 font-bold py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-lg disabled:opacity-50"
-                onClick={handleVerifyPayment}
-                disabled={verifying || !paymentId.trim()}
+                className="w-full gap-2 font-bold py-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg disabled:opacity-50"
+                onClick={() => handlePayNow(paymentPlan)}
+                disabled={isLoading || !agreed}
               >
-                {verifying ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Verifying with Razorpay...
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4" />
-                    Verify & Activate
-                  </>
-                )}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+                {isLoading ? "Waiting for payment confirmation..." : "Open Razorpay again"}
               </Button>
 
               <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={resetModal}>
