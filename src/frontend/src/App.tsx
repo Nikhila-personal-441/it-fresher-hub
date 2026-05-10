@@ -14,6 +14,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const ModuleList = lazy(() => import("@/pages/ModuleList"));

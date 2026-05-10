@@ -56,10 +56,10 @@ const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
   isLoading: true,
   loginStatus: "idle",
-  login: async () => {},
-  signup: async () => {},
-  resetPassword: async () => {},
-  logout: async () => {},
+  login: async () => { },
+  signup: async () => { },
+  resetPassword: async () => { },
+  logout: async () => { },
 });
 
 function mapUser(fbUser: User | null): AuthUser | null {
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    await recordLoginEvent(fbUser.uid, fbUser.email ?? "").catch(() => {});
+    await recordLoginEvent(fbUser.uid, fbUser.email ?? "").catch(() => { });
   }, []);
 
   const login = useCallback(
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: name });
         await createUserDoc(cred.user.uid, { email, displayName: name });
-        await recordLoginEvent(cred.user.uid, email).catch(() => {});
+        await recordLoginEvent(cred.user.uid, email).catch(() => { });
         const mapped = mapUser(cred.user);
         if (mapped) mapped.displayName = name;
         setUser(mapped);
@@ -147,11 +147,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendPasswordResetEmail(auth, email);
   }, []);
 
+
   const logout = useCallback(async () => {
-    await signOut(auth);
-    setUser(null);
-    setLoginStatus("idle");
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      await signOut(auth);
+
+      setUser(null);
+      setLoginStatus("idle");
+      window.location.href = "/signin";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   }, []);
+
 
   const isAuthenticated = !!user;
   const isAdmin =

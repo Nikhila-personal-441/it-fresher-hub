@@ -79,16 +79,47 @@ export function PaywallModal({
   const [step, setStep] = useState<"choose" | "processing" | "success">("choose");
   const [paymentPlan, setPaymentPlan] = useState<"premium" | "capstone">("premium");
 
-  const handlePayNow = (plan: "premium" | "capstone") => {
-    if (!agreed) return;
-    setPaymentPlan(plan);
-    clearPaymentError();
-    if (plan === "capstone") {
-      initiateCapstoneCheckout();
-    } else {
-      initiateCheckout();
+  const handlePayNow = async (plan: "premium" | "capstone") => {
+    try {
+      if (!agreed) return;
+
+      setPaymentPlan(plan);
+      clearPaymentError();
+      setStep("processing");
+
+      const amount =
+        plan === "capstone"
+          ? CAPSTONE_PRICE_INR * 100
+          : PRICE_INR * 100;
+
+      const response = await fetch("/api/create-payment-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount,
+          plan,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Could not initialize payment",
+        );
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Payment link not received");
+      }
+    } catch (error: any) {
+      console.error(error);
+      setStep("choose");
     }
-    setStep("processing");
   };
 
   useEffect(() => {
