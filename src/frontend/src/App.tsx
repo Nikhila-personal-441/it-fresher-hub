@@ -14,6 +14,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const ModuleList = lazy(() => import("@/pages/ModuleList"));
@@ -123,6 +124,11 @@ const corporateWorldSectionRoute = createRoute({
   path: "/corporate-world/$section",
   component: CorporateWorldSection,
 });
+const paymentSuccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/payment-success",
+  component: PaymentSuccess,
+});
 const mncPlatformsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/mnc-platforms",
@@ -168,6 +174,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
   modulesRoute,
+  paymentSuccessRoute,
   moduleDetailRoute,
   corporateWorldRoute,
   corporateWorldSectionRoute,
