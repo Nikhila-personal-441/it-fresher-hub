@@ -1,4 +1,5 @@
 import { CertificateCard } from "@/components/CertificateCard";
+import { InteractiveLessonRenderer } from "@/components/InteractiveLessonRenderer";
 import { PaywallModal } from "@/components/PaywallModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -250,6 +251,7 @@ export default function ModuleDetail() {
   const [challengeVisible, setChallengeVisible] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
+  const [readingComplete, setReadingComplete] = useState(false);
   const invalidateCertificates = useCertificateQueryClient();
   const markCompleted = useMarkModuleCompleted();
   const [certModalOpen, setCertModalOpen] = useState(false);
@@ -358,6 +360,11 @@ export default function ModuleDetail() {
   useEffect(() => {
     resetChallengeUi();
   }, [activeIndex]);
+
+  // Sync readingComplete state when activeIndex or progress changes
+  useEffect(() => {
+    setReadingComplete(!!(progress[activeIndex] as LessonProgress | undefined)?.completed);
+  }, [activeIndex, progress]);
 
   const activeLesson = lessons[activeIndex] ?? null;
   const lessonProgress = progress[activeIndex] as LessonProgress | undefined;
@@ -839,10 +846,10 @@ export default function ModuleDetail() {
                             {activeLesson.title}
                           </h2>
                           <div
-                            className="text-foreground/90 leading-relaxed text-sm sm:text-base mt-3 prose-lesson"
+                            className="text-foreground/90 leading-relaxed text-sm sm:text-base mt-3 prose-lesson line-clamp-4 opacity-70"
                             // biome-ignore lint/security/noDangerouslySetInnerHtml: content comes from trusted app data files, not user input
                             dangerouslySetInnerHTML={{
-                              __html: `${activeLesson.content.split("</p>")[0]}</p>`,
+                              __html: activeLesson.content.split("\n\n")[0],
                             }}
                           />
                         </div>
@@ -870,40 +877,38 @@ export default function ModuleDetail() {
                             total={lessons.length}
                           />
                         </div>
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 }}
-                          className="prose-lesson text-foreground/90 leading-relaxed text-sm sm:text-base space-y-3"
-                          // biome-ignore lint/security/noDangerouslySetInnerHtml: content comes from trusted app data files, not user input
-                          dangerouslySetInnerHTML={{
-                            __html: activeLesson.content,
-                          }}
+                        <InteractiveLessonRenderer 
+                          content={activeLesson.content}
+                          isCompleted={isLessonCompleted}
+                          onReadingComplete={() => setReadingComplete(true)}
                         />
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4 }}
-                          className="mt-5 p-4 rounded-xl bg-primary/8 border border-primary/20 flex gap-3"
-                        >
-                          <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
-                              ⚡ Fun Fact
-                            </p>
-                            <p
-                              className="text-sm text-foreground/80 leading-relaxed"
-                              // biome-ignore lint/security/noDangerouslySetInnerHtml: content comes from trusted app data files, not user input
-                              dangerouslySetInnerHTML={{
-                                __html: activeLesson.funFact,
-                              }}
-                            />
-                          </div>
-                        </motion.div>
+                        <AnimatePresence>
+                          {readingComplete && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mt-5 p-4 rounded-xl bg-primary/8 border border-primary/20 flex gap-3"
+                            >
+                              <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                                  ⚡ Fun Fact
+                                </p>
+                                <p
+                                  className="text-sm text-foreground/80 leading-relaxed"
+                                  // biome-ignore lint/security/noDangerouslySetInnerHtml: content comes from trusted app data files, not user input
+                                  dangerouslySetInnerHTML={{
+                                    __html: activeLesson.funFact,
+                                  }}
+                                />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </CardContent>
                     </Card>
 
-                    {!isLessonCompleted && !challengeVisible && (
+                    {!isLessonCompleted && !challengeVisible && readingComplete && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}

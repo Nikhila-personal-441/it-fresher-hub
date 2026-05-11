@@ -37,6 +37,21 @@ export function SignInGateProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isGateOpen]);
 
+  // Handle post-logout redirect where URL contains ?signin=true
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("signin") === "true") {
+      // Remove param from URL cleanly so it doesn't stay
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      if (!isAuthenticated) {
+        setIsDismissible(true);
+        setIsGateOpen(true);
+      }
+    }
+  }, [isAuthenticated]);
+
   // triggerSignInGate: used ONLY by the Upgrade/checkout flow (non-dismissible)
   // Do NOT call this from content clicks or page loads — only from PaywallModal subscribe button
   const triggerSignInGate = useCallback(() => {
