@@ -1,16 +1,17 @@
 import type { CertificateView } from "@/backend.d";
 import { CertificateCard } from "@/components/CertificateCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCertificates } from "@/hooks/useCertificates";
 import { downloadCertificateAsPdf } from "@/lib/pdfDownload";
 import { Award, BookOpen } from "lucide-react";
 import { motion } from "motion/react";
 
-// We default to a generic name; in a real app this would come from user profile
-const USER_DISPLAY_NAME = "Learner";
-
 export default function CertificatesPage() {
   const { data: certificates, isLoading } = useCertificates();
+  const { user } = useAuth();
+  
+  const userName = user?.displayName || "Learner";
 
   return (
     <div
@@ -103,9 +104,9 @@ export default function CertificatesPage() {
             >
               <CertificateCard
                 certificate={cert}
-                userName={USER_DISPLAY_NAME}
+                userName={userName}
                 onDownload={() =>
-                  downloadCertificateAsPdf(cert, USER_DISPLAY_NAME)
+                  downloadCertificateAsPdf(cert, userName)
                 }
               />
             </motion.div>
