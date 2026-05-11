@@ -36,7 +36,7 @@ export async function handler(event) {
             reminder_enable: true,
 
             callback_url:
-                "https://itfreshershub.in/payment-success",
+                body.return_url || "https://itfreshershub.netlify.app/payment-success",
 
             callback_method: "get",
         });

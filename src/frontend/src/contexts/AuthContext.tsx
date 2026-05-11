@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(null);
       setLoginStatus("idle");
-      window.location.href = "/signin";
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
     }

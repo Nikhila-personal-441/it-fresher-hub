@@ -12,6 +12,7 @@ import {
   PRICE_INR,
   useSubscription,
 } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Award,
   BookOpen,
@@ -78,6 +79,7 @@ export function PaywallModal({
   const [agreed, setAgreed] = useState(false);
   const [step, setStep] = useState<"choose" | "processing" | "success">("choose");
   const [paymentPlan, setPaymentPlan] = useState<"premium" | "capstone">("premium");
+  const { user } = useAuth();
 
   const handlePayNow = async (plan: "premium" | "capstone") => {
     try {
@@ -100,6 +102,9 @@ export function PaywallModal({
         body: JSON.stringify({
           amount,
           plan,
+          name: user?.displayName || "",
+          email: user?.email || "",
+          return_url: window.location.origin + "/payment-success"
         }),
       });
 
