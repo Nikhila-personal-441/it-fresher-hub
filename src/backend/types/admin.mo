@@ -50,4 +50,30 @@ module {
     timestamp : CommonTypes.Timestamp;
     status : Text;
   };
+  public type CourseCompletion = {
+    userId : CommonTypes.UserId;
+    userIdText : Text;
+    courseId : Text;
+    completedAt : CommonTypes.Timestamp;
+    certificateId : Text;
+  };
+
+  /// A single login event recorded when a user signs in.
+  public type LoginEvent = {
+    userId : CommonTypes.UserId;
+    userIdText : Text;
+    timestamp : CommonTypes.Timestamp;
+  };
+
+  /// A payment record created on successful Razorpay payment.
+  public type PaymentRecord = {
+    userId : CommonTypes.UserId;
+    userIdText : Text;
+    paymentId : Text;
+    orderId : Text;
+    amount : Nat;
+    plan : Text;
+    timestamp : CommonTypes.Timestamp;
+    status : Text;
+  };
 };

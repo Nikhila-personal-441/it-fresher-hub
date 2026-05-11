@@ -1,13 +1,18 @@
 [build]
-  command = "pnpm install --no-frozen-lockfile && pnpm build"
+  base = "src/frontend"
+  command = "pnpm install --prefer-offline && pnpm build"
   publish = "dist"
-  functions = "netlify/functions"
 
+[functions]
+  directory = "netlify/functions"
+
+# API route for payment verification — handled by serverless function
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
+# SPA fallback — redirect all routes to index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
