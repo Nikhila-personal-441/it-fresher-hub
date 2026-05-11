@@ -74,57 +74,24 @@ export function InteractiveLessonRenderer({
 }) {
   const chunks = content.split("\n\n").filter(c => c.trim().length > 0);
   
-  // If already completed, show all chunks. Otherwise start with 1.
-  const [visibleCount, setVisibleCount] = useState(isCompleted ? chunks.length : 1);
-
-  // Reset when content changes
+  // Instantly mark reading as complete since we show everything at once now
   useEffect(() => {
-    const count = isCompleted ? chunks.length : 1;
-    setVisibleCount(count);
-    if (count >= chunks.length) {
-      onReadingComplete();
-    }
-  }, [content, isCompleted, chunks.length, onReadingComplete]);
-
-  const showNext = () => {
-    const nextCount = visibleCount + 1;
-    setVisibleCount(nextCount);
-    if (nextCount >= chunks.length) {
-      onReadingComplete();
-    }
-  };
+    onReadingComplete();
+  }, [onReadingComplete]);
 
   return (
     <div className="space-y-6">
-      <AnimatePresence initial={false}>
-        {chunks.slice(0, visibleCount).map((chunk, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="prose-lesson"
-          >
-            {parseParagraph(chunk)}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-      
-      {visibleCount < chunks.length && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="pt-6 pb-2 flex justify-center"
+      {chunks.map((chunk, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: Math.min(i * 0.08, 0.5), ease: "easeOut" }}
+          className="prose-lesson"
         >
-          <Button 
-            onClick={showNext} 
-            variant="outline" 
-            className="rounded-full shadow-sm border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-2 px-8 py-6 font-semibold"
-          >
-            Continue reading <ChevronDown className="w-5 h-5" />
-          </Button>
+          {parseParagraph(chunk)}
         </motion.div>
-      )}
+      ))}
     </div>
   );
 }

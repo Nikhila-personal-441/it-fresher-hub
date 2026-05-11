@@ -79,6 +79,8 @@ export function PaywallModal({
   const [agreed, setAgreed] = useState(false);
   const [step, setStep] = useState<"choose" | "processing" | "success">("choose");
   const [paymentPlan, setPaymentPlan] = useState<"premium" | "capstone">("premium");
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const { user } = useAuth();
 
   const handlePayNow = async (plan: "premium" | "capstone") => {
@@ -87,6 +89,7 @@ export function PaywallModal({
 
       setPaymentPlan(plan);
       clearPaymentError();
+      setIsFetchingUrl(true);
       setStep("processing");
 
       const amount =
@@ -117,12 +120,19 @@ export function PaywallModal({
       }
 
       if (data.url) {
+        setPaymentUrl(data.url);
         window.location.href = data.url;
+        
+        // Wait 10 seconds before allowing the user to click the manual link
+        setTimeout(() => {
+          setIsFetchingUrl(false);
+        }, 10000);
       } else {
         throw new Error("Payment link not received");
       }
     } catch (error: any) {
       console.error(error);
+      setIsFetchingUrl(false);
       setStep("choose");
     }
   };
@@ -257,10 +267,10 @@ export function PaywallModal({
                 <Button
                   className="w-full gap-2 font-bold py-5 text-base rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg disabled:opacity-50"
                   onClick={() => handlePayNow("premium")}
-                  disabled={isLoading || !agreed}
+                  disabled={isLoading || isFetchingUrl || !agreed}
                   data-ocid="btn-subscribe-now"
                 >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Crown className="w-5 h-5" />}
+                  {(isLoading || isFetchingUrl) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Crown className="w-5 h-5" />}
                   Pay ₹{PRICE_INR} · Unlock Premium
                   <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-60" />
                 </Button>
@@ -308,11 +318,11 @@ export function PaywallModal({
 
               <Button
                 className="w-full gap-2 font-bold py-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg disabled:opacity-50"
-                onClick={() => handlePayNow(paymentPlan)}
-                disabled={isLoading || !agreed}
+                onClick={() => paymentUrl ? (window.location.href = paymentUrl) : handlePayNow(paymentPlan)}
+                disabled={isLoading || isFetchingUrl || !agreed}
               >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-                {isLoading ? "Waiting for payment confirmation..." : "Open Razorpay again"}
+                {(isLoading || isFetchingUrl) ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+                {(isLoading || isFetchingUrl) ? "Redirecting to Razorpay... Please wait" : "Click here if not redirected automatically"}
               </Button>
 
               <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={resetModal}>
