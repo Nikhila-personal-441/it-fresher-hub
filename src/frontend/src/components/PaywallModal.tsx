@@ -423,9 +423,8 @@ export function PaywallModal({
                 <div className="text-center pt-1">
                   <a href="mailto:itfreshershub@gmail.com?subject=IT%20Fresher%20Hub%20Support" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary hover:underline">Need help? Contact Support</a>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
 
           {/* ─── Step: Verify payment ─── */}
           {step === "processing" && (
@@ -457,24 +456,6 @@ export function PaywallModal({
                 </div>
               )}
 
-              {processingTime > 0 ? (
-                <p className="text-[10px] text-center text-muted-foreground">
-                  Opening Razorpay secure checkout in {processingTime}s...
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-[10px] text-center text-muted-foreground">
-                    Didn't see the payment window?
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-9 text-xs border-primary text-primary hover:bg-primary/5"
-                    onClick={() => handlePayNow(paymentPlan)}
-                  >
-                    Open Razorpay Again
-                  </Button>
-                </div>
-              )}
 
               {paymentError && (
                 <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">
