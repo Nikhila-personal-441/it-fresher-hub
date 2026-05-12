@@ -97,6 +97,7 @@ export interface UserProgress {
   lastActiveAt: bigint;
   streakDays: number;
   level: "fresher" | "learner" | "practitioner" | "professional";
+  moduleProgress?: Record<string, number>;
 }
 
 export type CategoryFilter = ModuleCategory | "all";

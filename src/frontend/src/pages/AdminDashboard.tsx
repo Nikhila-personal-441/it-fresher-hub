@@ -37,8 +37,9 @@ import {
   rejectSubscription,
 } from "@/lib/firestoreService";
 import { useQueryClient } from "@tanstack/react-query";
+import { AdminCouponsTab } from "./AdminCouponsTab";
 
-type Tab = "users" | "logins" | "payments";
+type Tab = "users" | "logins" | "payments" | "coupons";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 /** Convert any timestamp (Firestore, bigint-nanos, Date, string) into a Date */
@@ -399,6 +400,7 @@ export default function AdminDashboard() {
               { id: "users", label: "All Users", icon: Users },
               { id: "logins", label: "Login Events", icon: LogIn },
               { id: "payments", label: "Payment Records", icon: Receipt },
+              { id: "coupons", label: "Coupons", icon: CreditCard },
             ] as { id: Tab; label: string; icon: React.ElementType }[]
           ).map(({ id, label, icon: Icon }) => (
             <button
@@ -762,6 +764,8 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+        {/* ── Coupons tab ── */}
+        {activeTab === "coupons" && <AdminCouponsTab />}
       </motion.div>
     </div>
   );

@@ -42,6 +42,7 @@ export function useProgress() {
         lastActiveAt: BigInt(Date.now()),
         streakDays: progress.streakDays || 0,
         level: resolveLevel(completedModules.length),
+        moduleProgress: progress.moduleProgress || {},
       };
     },
     enabled: isAuthenticated,

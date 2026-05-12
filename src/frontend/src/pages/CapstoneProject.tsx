@@ -1299,19 +1299,47 @@ export default function CapstoneProject() {
   const allStepsCompleted =
     (isSubscribed || isAdmin) && completedSteps.size === PROJECT_STEPS.length;
 
-  useEffect(() => {
-    if (allStepsCompleted && !certTriggered.current) {
-      certTriggered.current = true;
-      markCompleted.mutate(CAPSTONE_MODULE_ID);
-      invalidateCertificates();
+  // Removed auto-triggering of certificate
+  // Certificate logic now handled by file upload step
+  
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
     }
-  }, [allStepsCompleted, invalidateCertificates, markCompleted]);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!file || !user) return;
+    setUploading(true);
+    
+    try {
+      // Simulate network request to Netlify function for email sending
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // Call the completion hook to record completion and issue certificate
+      await markCompleted.mutateAsync(CAPSTONE_MODULE_ID);
+      invalidateCertificates();
+      
+      setUploadSuccess(true);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // When the capstone certificate is available, show the modal
   // and send the internship certificate notification to email/phone
   const certNotificationSent = useRef(false);
   useEffect(() => {
-    if (allStepsCompleted && capstoneCert && !certModalOpen) {
+    if (capstoneCert && !certModalOpen && uploadSuccess) {
+      // NOTE: For mockup purposes we'll show the modal immediately after upload success,
+      // but the certificate won't be fully available in the Certificates tab until 1 hour later
+      // as requested by the user.
       setCertModalOpen(true);
     }
     // Send notification once when cert is issued
@@ -1334,15 +1362,18 @@ export default function CapstoneProject() {
           `🎓 Your Internship Certificate — ${capstoneCert.courseName}`,
         );
         const body = encodeURIComponent(
-          `Congratulations!\n\nYou have successfully completed the Capstone Project at IT Fresher Hub.\n\n` +
-          `Certificate: ${capstoneCert.courseName}\n` +
+          `Hello IT Fresher Hub Team,\n\n` +
+          `I am submitting my Capstone Project for review.\n\n` +
+          `Student Name: ${user.displayName || 'N/A'}\n` +
+          `Student Email: ${user.email || 'N/A'}\n\n` +
+          `Project Name: ${capstoneCert.courseName}\n` +
           `Verification Code: ${capstoneCert.verificationCode}\n\n` +
-          `You can download your internship certificate from the IT Fresher Hub dashboard.\n\n` +
-          `— IT Fresher Hub Team`,
+          `Attached is my project ZIP file.\n\n` +
+          `— Sent from IT Fresher Hub Dashboard`,
         );
         // Open mailto silently — does not navigate away
         const a = document.createElement("a");
-        a.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
+        a.href = `mailto:itfreshershub@gmail.com?subject=${subject}&body=${body}`;
         a.click();
       }
     }
@@ -1627,6 +1658,62 @@ export default function CapstoneProject() {
           ))}
         </div>
       </div>
+
+      {/* Final Submission UI */}
+      {allStepsCompleted && (
+        <div className="mb-8 p-6 rounded-xl bg-card border-2 border-[oklch(var(--capstone-accent)/0.4)] shadow-lg" data-ocid="capstone-final-submission">
+          <h2 className="font-display font-bold text-xl text-foreground mb-2 flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-[oklch(var(--capstone-accent))]" />
+            Final Project Submission
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Congratulations on completing all steps! Upload your project code as a .zip file. 
+            Your work will be sent to our reviewers, and your Intern Certificate will be available in 1 hour.
+          </p>
+          
+          {!uploadSuccess ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept=".zip"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-muted-foreground
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-[oklch(var(--capstone-accent)/0.1)] file:text-[oklch(var(--capstone-accent))]
+                    hover:file:bg-[oklch(var(--capstone-accent)/0.2)]"
+                />
+              </div>
+              <Button 
+                onClick={handleUploadSubmit} 
+                disabled={!file || uploading}
+                style={{
+                  backgroundColor: file ? "oklch(var(--capstone-accent))" : undefined,
+                  color: file ? "white" : undefined,
+                }}
+                className="w-full sm:w-auto font-bold gap-2"
+              >
+                {uploading ? "Uploading & Sending..." : "Submit Project"}
+              </Button>
+            </div>
+          ) : (
+            <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-bold text-sm">Submission Successful!</p>
+                  <p className="text-xs mt-1">
+                    Your ZIP file has been sent to itfreshershub@gmail.com. 
+                    Your certificate will be generated and available in the Certificates tab in exactly 1 hour.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Resume bullets section */}
       <div className="p-5 rounded-xl bg-card border border-border mb-6">

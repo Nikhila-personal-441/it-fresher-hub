@@ -32,6 +32,7 @@ const EtlTools = lazy(() => import("@/pages/EtlTools"));
 const CapstoneProject = lazy(() => import("@/pages/CapstoneProject"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const Certificates = lazy(() => import("@/pages/Certificates"));
+const TrackDetail = lazy(() => import("@/pages/TrackDetail"));
 
 function PageLoader() {
   return (
@@ -169,6 +170,11 @@ const certificatesRoute = createRoute({
   path: "/certificates",
   component: Certificates,
 });
+const trackDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tracks/$id",
+  component: TrackDetail,
+});
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -186,6 +192,7 @@ const routeTree = rootRoute.addChildren([
   quizResultRoute,
   adminRoute,
   certificatesRoute,
+  trackDetailRoute,
 ]);
 
 const router = createRouter({ routeTree });

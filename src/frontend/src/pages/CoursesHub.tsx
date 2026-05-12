@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { LEARNING_PATHS, LearningPath } from "@/data/paths";
 
 // ── Tab structure ────────────────────────────────────────────────────────────
 
@@ -31,6 +32,12 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
+  {
+    key: "tracks",
+    label: "Certification Paths",
+    icon: "🚀",
+    categories: [],
+  },
   {
     key: "all",
     label: "All Courses",
@@ -583,6 +590,55 @@ export default function CoursesHub() {
                   <CardSkeleton key={k} />
                 ),
               )}
+            </div>
+          ) : activeTab === "tracks" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {LEARNING_PATHS.map((path, i) => (
+                <motion.div
+                  key={path.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="group relative flex flex-col h-full bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="p-6 flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-3xl">
+                        {path.icon}
+                      </div>
+                      <Badge variant="outline" className="border-secondary text-secondary font-bold">₹{path.priceINR}</Badge>
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
+                      {path.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4 flex-grow">
+                      {path.description}
+                    </p>
+                    <div className="space-y-3 mb-6">
+                      <div className="flex flex-wrap gap-1.5">
+                        {path.skills.map(s => (
+                          <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/5 text-secondary font-medium border border-secondary/20">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                        <BookOpen className="w-3 h-3" />
+                        Includes {path.modules.length} Specialized Modules
+                      </p>
+                    </div>
+                    <Link
+                      to="/tracks/$id"
+                      params={{ id: path.id }}
+                      className="w-full"
+                    >
+                      <Button className="w-full bg-secondary hover:bg-secondary/90 text-white font-bold py-5 rounded-xl gap-2">
+                        View Path Details <Trophy className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           ) : sortedModules.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

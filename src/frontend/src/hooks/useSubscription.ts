@@ -27,7 +27,8 @@ declare global {
 }
 
 const SUBSCRIPTION_KEY = "itfresherhub_subscription_v2";
-export const PRICE_INR = 199;
+export const PRICE_INR = 99;
+export const PATH_PRICE_INR = 199;
 export const CAPSTONE_PRICE_INR = 499;
 /** Lifetime plan — no expiry */
 export const SUBSCRIPTION_DAYS = 36500;
@@ -36,7 +37,7 @@ export interface SubscriptionData {
   active: boolean;
   activatedAt: string | null;
   expiresAt: string | null;
-  plan: "free" | "premium";
+  plan: string | string[];
   razorpayPaymentId?: string;
 }
 
@@ -50,6 +51,8 @@ interface UseSubscriptionReturn {
   initiateCheckout: () => void;
   /** Opens Razorpay Checkout for ₹499 capstone */
   initiateCapstoneCheckout: () => void;
+  /** Opens Razorpay Checkout for a specific path */
+  initiatePathCheckout: (pathId: string) => void;
   refreshSubscription: () => void;
   showSignInForUpgrade: boolean;
   dismissSignInForUpgrade: () => void;
@@ -148,7 +151,7 @@ export function useSubscription(): UseSubscriptionReturn {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const syncedFromBackend = useRef(false);
-  const pendingCheckout = useRef<"premium" | "capstone" | null>(null);
+  const pendingCheckout = useRef<string | null>(null);
   const [showSignInForUpgrade, setShowSignInForUpgrade] = useState(false);
   const { isAdmin } = useIsAdmin();
 
@@ -169,7 +172,7 @@ export function useSubscription(): UseSubscriptionReturn {
               active: true,
               activatedAt: new Date().toISOString(),
               expiresAt,
-              plan: "premium",
+              plan: sub.plan,
             };
             saveSubscriptionLocal(synced);
             setSubscriptionData(synced);
@@ -183,7 +186,7 @@ export function useSubscription(): UseSubscriptionReturn {
     async (args: {
       razorpayPaymentId: string;
       razorpayOrderId: string;
-      plan: "premium" | "capstone";
+      plan: string;
       amountInr: number;
       status?: string;
     }) => {
@@ -196,7 +199,7 @@ export function useSubscription(): UseSubscriptionReturn {
         active: true,
         activatedAt,
         expiresAt,
-        plan: "premium",
+        plan: args.plan,
         razorpayPaymentId: args.razorpayPaymentId,
       };
 
@@ -207,6 +210,7 @@ export function useSubscription(): UseSubscriptionReturn {
         razorpayOrderId: args.razorpayOrderId,
         razorpayPaymentId: args.razorpayPaymentId,
         expiresAt,
+        plan: args.plan,
       }).catch((e) => console.warn("Failed to save subscription:", e));
 
       savePayment({
@@ -226,7 +230,7 @@ export function useSubscription(): UseSubscriptionReturn {
 
   /** Open Razorpay Checkout popup */
   const openRazorpay = useCallback(
-    async (plan: "premium" | "capstone") => {
+    async (plan: string) => {
       const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
       if (!razorpayKey || razorpayKey === "your_razorpay_key_id") {
         setPaymentError("Payment is not configured yet. Please contact support.");
@@ -244,7 +248,7 @@ export function useSubscription(): UseSubscriptionReturn {
         return;
       }
 
-      const amount = plan === "capstone" ? CAPSTONE_PRICE_INR : PRICE_INR;
+      const amount = plan === "capstone" ? CAPSTONE_PRICE_INR : plan.startsWith("path_") ? PATH_PRICE_INR : PRICE_INR;
       let orderId: string | null = null;
       try {
         const orderRes = await fetch("/api/create-order", {
@@ -277,7 +281,9 @@ export function useSubscription(): UseSubscriptionReturn {
         name: "IT Fresher Hub",
         description: plan === "capstone"
           ? "Capstone Project — Full Access + Certificate"
-          : "Premium — Lifetime Full Access",
+          : plan.startsWith("path_") 
+            ? "Path Certification Enrollment"
+            : "Premium — Lifetime Full Access",
         image: "/favicon.ico",
         theme: { color: "#6d28d9" },
         prefill: {
@@ -358,6 +364,15 @@ export function useSubscription(): UseSubscriptionReturn {
     void openRazorpay("capstone");
   }, [isAuthenticated, openRazorpay]);
 
+  const initiatePathCheckout = useCallback((pathId: string) => {
+    if (!isAuthenticated) {
+      pendingCheckout.current = pathId;
+      setShowSignInForUpgrade(true);
+      return;
+    }
+    void openRazorpay(pathId);
+  }, [isAuthenticated, openRazorpay]);
+
   const refreshSubscription = useCallback(() => {
     setIsLoading(true);
     if (user) {
@@ -372,7 +387,7 @@ export function useSubscription(): UseSubscriptionReturn {
               active: true,
               activatedAt: new Date().toISOString(),
               expiresAt,
-              plan: "premium",
+              plan: sub.plan,
             };
             saveSubscriptionLocal(synced);
             setSubscriptionData(synced);

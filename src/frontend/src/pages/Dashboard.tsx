@@ -1,5 +1,7 @@
 import { CertificateCard } from "@/components/CertificateCard";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { PaywallModal } from "@/components/PaywallModal";
+import { LEARNING_PATHS, getPathModules } from "@/data/paths";
 import { SubscriptionCountdown } from "@/components/SubscriptionCountdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -198,9 +200,10 @@ export default function Dashboard() {
     progress?.completedModules[progress.completedModules.length - 1];
   const inProgressModules = (() => {
     if (!modules) return [];
-    const withPartial = modules.filter(
-      (m) => m.progress > 0 && m.progress < 100 && !completedSet.has(m.id),
-    );
+    const withPartial = modules.filter((m) => {
+      const prog = progress?.moduleProgress?.[m.id] || 0;
+      return prog > 0 && prog < 100 && !completedSet.has(m.id);
+    });
     if (withPartial.length > 0) return withPartial.slice(0, 3);
     if (lastCompletedId) {
       const lastIdx = modules.findIndex((m) => m.id === lastCompletedId);
@@ -249,6 +252,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative">
+      <OnboardingTour />
       <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />
       {/* ── Motivational Header ──────────────────────────────── */}
       <motion.div
@@ -558,7 +562,7 @@ export default function Dashboard() {
                     {inProgressModules.map((mod, i) => {
                       const modProgress = completedSet.has(mod.id)
                         ? 100
-                        : mod.progress;
+                        : progress?.moduleProgress?.[mod.id] || 0;
                       return (
                         <motion.div
                           key={mod.id}
@@ -612,6 +616,64 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+                    {/* Certification Paths Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-5 h-5 text-secondary" />
+                          <h2 className="font-display font-bold text-xl text-foreground">
+                            Certification Paths
+                          </h2>
+                        </div>
+                        <Link to="/courses" search={{ category: "tracks" }} className="text-xs text-secondary hover:underline font-medium">
+                          View all paths
+                        </Link>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {LEARNING_PATHS.slice(0, 2).map((path) => {
+                          const pathModules = getPathModules(path.id);
+                          const completedInPath = pathModules.filter(m => completedSet.has(m.id)).length;
+                          const pathProgress = Math.round((completedInPath / pathModules.length) * 100);
+                          
+                          return (
+                            <Link 
+                              key={path.id} 
+                              to="/tracks/$id" 
+                              params={{ id: path.id }}
+                              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all duration-300 group"
+                            >
+                              <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                  {path.icon}
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="font-bold text-sm text-foreground group-hover:text-secondary transition-colors truncate">
+                                    {path.title}
+                                  </h3>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {pathModules.length} Modules · Path Certification
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="text-muted-foreground">Path Progress</span>
+                                  <span className="font-bold text-secondary">{pathProgress}%</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-secondary transition-all duration-500" 
+                                    style={{ width: `${pathProgress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
 
               {/* Featured This Week */}
               <div className="space-y-4">

@@ -63,13 +63,7 @@ const NAV_ITEMS: NavItem[] = [
     dataOcid: "nav-mnc-platforms",
     accentClass: "text-[oklch(var(--platform-accent))]",
   },
-  {
-    to: "/etl-tools",
-    label: "ETL Tools",
-    icon: Database,
-    dataOcid: "nav-etl-tools",
-    accentClass: "text-[oklch(var(--etl-accent))]",
-  },
+
   {
     to: "/capstone-project",
     label: "Capstone Project",
@@ -85,7 +79,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: "/quiz",
-    label: "Corporate Quiz",
+    label: "Corporate Readiness Quiz",
     icon: ClipboardCheck,
     dataOcid: "nav-quiz",
   },

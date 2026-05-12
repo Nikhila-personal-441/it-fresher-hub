@@ -20,9 +20,9 @@ export async function handler(event) {
         const body = JSON.parse(event.body || "{}");
 
         const paymentLink = await razorpay.paymentLink.create({
-            amount: 19900,
+            amount: body.amount || 19900,
             currency: "INR",
-            description: "IT Freshers Hub Premium Access",
+            description: body.plan === "capstone" ? "IT Freshers Hub Capstone Access" : "IT Freshers Hub Premium Access",
 
             customer: {
                 name: body.name || "Student",

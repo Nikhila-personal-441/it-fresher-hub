@@ -226,7 +226,7 @@ export async function updateLearningHours(uid: string, hours: number) {
 export interface SubscriptionDoc {
   userId: string;
   status: "active" | "inactive" | "cancelled" | "pending_verification";
-  plan: string;
+  plan: string | string[];
   startDate: unknown;
   expiresAt: string;
   razorpayOrderId?: string;
@@ -271,12 +271,28 @@ export async function activateSubscription(
     razorpayOrderId: string;
     razorpayPaymentId: string;
     expiresAt: string;
+    plan: string;
   },
 ) {
-  await setDoc(doc(db, "subscriptions", uid), {
+  const ref = doc(db, "subscriptions", uid);
+  const snap = await getDoc(ref);
+  let plans: string[] = [];
+  if (snap.exists()) {
+    const existing = snap.data() as SubscriptionDoc;
+    if (Array.isArray(existing.plan)) {
+      plans = existing.plan;
+    } else if (existing.plan) {
+      plans = [existing.plan];
+    }
+  }
+  if (!plans.includes(data.plan)) {
+    plans.push(data.plan);
+  }
+
+  await setDoc(ref, {
     userId: uid,
     status: "active",
-    plan: "lifetime",
+    plan: plans,
     startDate: serverTimestamp(),
     expiresAt: data.expiresAt,
     razorpayOrderId: data.razorpayOrderId,
@@ -458,4 +474,29 @@ export async function saveCertificateNotification(
     ...data,
     sentAt: serverTimestamp(),
   });
+}
+
+// ─── Coupons ────────────────────────────────────────────────────────────────
+
+export interface DiscountAccessDoc {
+  user_id: string;
+  user_name: string;
+  discount_25: boolean;
+  discount_50: boolean;
+  discount_75: boolean;
+  discount_100: boolean;
+}
+
+export async function getUserDiscountAccess(uid: string): Promise<DiscountAccessDoc | null> {
+  const snap = await getDoc(doc(db, "users_discount_access", uid));
+  return snap.exists() ? (snap.data() as DiscountAccessDoc) : null;
+}
+
+export async function updateUserDiscountAccess(uid: string, data: Partial<DiscountAccessDoc>) {
+  await setDoc(doc(db, "users_discount_access", uid), data, { merge: true });
+}
+
+export async function getAllDiscountAccess(): Promise<(DiscountAccessDoc & { id: string })[]> {
+  const snap = await getDocs(collection(db, "users_discount_access"));
+  return snap.docs.map(d => ({ id: d.id, ...(d.data() as DiscountAccessDoc) }));
 }

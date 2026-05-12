@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, User, MessageSquare } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 function parseParagraph(text: string) {
   // Check for scenario callouts first
@@ -72,26 +72,67 @@ export function InteractiveLessonRenderer({
   isCompleted: boolean;
   onReadingComplete: () => void;
 }) {
-  const chunks = content.split("\n\n").filter(c => c.trim().length > 0);
+  const allChunks = useMemo(() => content.split("\n\n").filter(c => c.trim().length > 0), [content]);
   
-  // Instantly mark reading as complete since we show everything at once now
+  // Decide how many steps. We want at most 2 "Keep Reading" clicks.
+  // step 1: initial chunks
+  // step 2: first reveal
+  // step 3: second reveal (final)
+  const [visibleSteps, setVisibleSteps] = useState(isCompleted ? 3 : 1);
+  
+  const stepSize = Math.ceil(allChunks.length / 3);
+  const chunksToDisplay = allChunks.slice(0, visibleSteps * stepSize);
+  const hasMore = visibleSteps < 3 && chunksToDisplay.length < allChunks.length;
+
   useEffect(() => {
-    onReadingComplete();
-  }, [onReadingComplete]);
+    if (!hasMore) {
+      onReadingComplete();
+    }
+  }, [hasMore, onReadingComplete]);
+
+  const handleNext = () => {
+    setVisibleSteps(prev => prev + 1);
+  };
 
   return (
-    <div className="space-y-6">
-      {chunks.map((chunk, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: Math.min(i * 0.08, 0.5), ease: "easeOut" }}
-          className="prose-lesson"
+    <div className="space-y-8 pb-10">
+      <div className="space-y-6">
+        {chunksToDisplay.map((chunk, i) => (
+          <motion.div
+            key={i}
+            initial={isCompleted ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.05 }}
+            className="prose-lesson"
+          >
+            {parseParagraph(chunk)}
+          </motion.div>
+        ))}
+      </div>
+
+      {hasMore && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex justify-center pt-4"
         >
-          {parseParagraph(chunk)}
+          <button 
+            onClick={handleNext}
+            className="group flex items-start gap-3 text-left max-w-xs sm:max-w-md"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div className="bg-primary text-primary-foreground px-5 py-3 rounded-2xl rounded-tl-none shadow-lg group-hover:shadow-xl group-hover:-translate-y-0.5 transition-all relative">
+              <p className="text-sm font-bold flex items-center gap-2">
+                 Keep Reading <ChevronDown className="w-4 h-4 animate-bounce" />
+              </p>
+              {/* Chat bubble tail */}
+              <div className="absolute -left-2 top-0 w-3 h-3 bg-primary" style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }} />
+            </div>
+          </button>
         </motion.div>
-      ))}
+      )}
     </div>
   );
 }
