@@ -15,6 +15,13 @@ export interface LearningPath {
 }
 
 export const LEARNING_PATHS: LearningPath[] = [
+  {
+    id: "path_it_fundamentals",
+    title: "IT Fundamentals Path",
+    description:
+      "Master the core building blocks: hardware, OS, networking, cybersecurity and corporate essentials every IT professional needs.",
+    icon: "🖥️",
+    priceINR: 199,
     mandatoryModules: ["1", "2", "11", "17", "19"], // IT Fundamentals, Networking, Cyber, Corporate Skills, Roles
     optionalModules: ["21"], // Jargon (Optional)
     skills: ["Hardware", "Networking", "Security", "Corporate Communication"],
