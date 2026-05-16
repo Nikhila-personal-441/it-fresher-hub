@@ -52,16 +52,13 @@ export function SignInGateProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated]);
 
-  // Show dismissible sign-in prompt on first-ever app visit for unauthenticated users.
+  // Show dismissible sign-in prompt on every app visit for unauthenticated users.
   // Delayed by 4s so the onboarding tour shows first.
   useEffect(() => {
     if (isAuthenticated) return;
-    const alreadyPrompted = localStorage.getItem("signin_prompted_v1");
-    if (alreadyPrompted) return;
 
     const timer = setTimeout(() => {
       if (!isAuthenticated) {
-        localStorage.setItem("signin_prompted_v1", "true");
         setIsDismissible(true);
         setIsGateOpen(true);
       }

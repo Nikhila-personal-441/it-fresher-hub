@@ -79,22 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     "idle" | "loading" | "success" | "error"
   >("idle");
 
-  // Listen to Firebase auth state
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      const mapped = mapUser(fbUser);
-      setUser(mapped);
-      setIsLoading(false);
-      setLoginStatus(mapped ? "success" : "idle");
-    });
-    return unsubscribe;
-  }, []);
-
   const handlePostLogin = useCallback(async (fbUser: User) => {
-    const mapped = mapUser(fbUser);
-    setUser(mapped);
-    setLoginStatus("success");
-
     // Update or create user doc + record login event
     try {
       await updateUserLogin(fbUser.uid);
@@ -108,6 +93,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     await recordLoginEvent(fbUser.uid, fbUser.email ?? "").catch(() => { });
   }, []);
+
+  // Sync user state and trigger streak updates on mount/entry
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      const mapped = mapUser(fbUser);
+      setUser(mapped);
+      setIsLoading(false);
+      setLoginStatus(mapped ? "success" : "idle");
+
+      if (fbUser) {
+        // Trigger streak/login update every time the app is opened/refreshed
+        handlePostLogin(fbUser);
+      }
+    });
+    return unsubscribe;
+  }, [handlePostLogin]);
 
   const login = useCallback(
     async (email: string, password: string) => {
