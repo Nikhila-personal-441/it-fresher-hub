@@ -95,15 +95,7 @@ export function OnboardingTour() {
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleComplete(); }}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-none bg-card rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] gap-0">
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={handleComplete}
-          className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 text-muted-foreground transition-colors"
-          aria-label="Close tour"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Relying on default Close button from DialogContent */}
 
         {/* Hero Area */}
         <div className={`relative bg-gradient-to-br ${slide.gradient} px-8 pt-14 pb-8 text-center overflow-hidden min-h-[340px] flex flex-col items-center`}>

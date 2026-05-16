@@ -386,6 +386,9 @@ export default function TrackDetail() {
           {modules.map((module, i) => {
             const isMandatory = path.mandatoryModules.includes(module.id);
             const isOptional = path.optionalModules.includes(module.id);
+            const modPct = progress?.moduleProgress?.[module.id] ?? 0;
+            const isCompleted = completedModuleIds.has(module.id) || modPct >= 100;
+
             return (
               <motion.div
                 key={module.id}

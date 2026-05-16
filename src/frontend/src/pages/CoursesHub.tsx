@@ -647,7 +647,7 @@ export default function CoursesHub() {
                       </div>
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 font-medium">
                         <BookOpen className="w-3 h-3" />
-                        Includes {path.modules.length} Specialized Modules
+                        Includes {path.mandatoryModules.length + path.optionalModules.length} Specialized Modules
                       </p>
                     </div>
                     <Link
