@@ -172,7 +172,7 @@ export default function Dashboard() {
   const { data: modules, isLoading: modulesLoading } = useModules();
   const { data: progress } = useProgress();
   const { data: glossaryTerms } = useGlossary();
-  const { isSubscribed, daysRemaining } = useSubscription();
+  const { isSubscribed, daysRemaining, planName } = useSubscription();
   const { data: certificates } = useCertificates();
 
   const { loginStatus } = useAuth();

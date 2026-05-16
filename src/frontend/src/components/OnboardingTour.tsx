@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Check, Sparkles, Star, Trophy, Users, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const TOUR_KEY = "onboarding_tour_seen_v4";
+import { useSignInGate } from "@/contexts/SignInGateContext";
+
+const TOUR_GUEST_KEY = "onboarding_tour_guest_v1";
+const TOUR_USER_KEY_PREFIX = "onboarding_tour_user_v1_";
 
 const TOUR_SLIDES = [
   {
@@ -67,19 +70,26 @@ const TOUR_SLIDES = [
 export function OnboardingTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { openDismissibleGate } = useSignInGate();
+
   useEffect(() => {
-    // For guests (not authenticated), we show it on every fresh app load/refresh 
-    // unless seen in THIS session (sessionStorage).
-    // For authenticated users, we use persistent localStorage.
-    const storage = isAuthenticated ? localStorage : sessionStorage;
-    const hasSeen = storage.getItem(TOUR_KEY);
+    // Determine the correct storage key based on authentication status
+    let hasSeen = false;
+    
+    if (isAuthenticated && user?.uid) {
+      // For authenticated users, check persistent localStorage (per account)
+      hasSeen = !!localStorage.getItem(`${TOUR_USER_KEY_PREFIX}${user.uid}`);
+    } else {
+      // For guests, check session storage (resets on tab close, but survives refresh)
+      hasSeen = !!sessionStorage.getItem(TOUR_GUEST_KEY);
+    }
 
     if (!hasSeen) {
-      const timer = setTimeout(() => setOpen(true), 1200);
+      const timer = setTimeout(() => setOpen(true), 800);
       return () => clearTimeout(timer);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.uid]);
 
   const handleNext = () => {
     if (step < TOUR_SLIDES.length - 1) {
@@ -90,8 +100,13 @@ export function OnboardingTour() {
   };
 
   const handleComplete = () => {
-    const storage = isAuthenticated ? localStorage : sessionStorage;
-    storage.setItem(TOUR_KEY, "true");
+    if (isAuthenticated && user?.uid) {
+      localStorage.setItem(`${TOUR_USER_KEY_PREFIX}${user.uid}`, "true");
+    } else {
+      sessionStorage.setItem(TOUR_GUEST_KEY, "true");
+      // After guest tour ends, trigger sign-in gate
+      setTimeout(() => openDismissibleGate(), 400);
+    }
     setOpen(false);
   };
 
