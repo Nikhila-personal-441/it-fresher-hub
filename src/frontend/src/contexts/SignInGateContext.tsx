@@ -50,21 +50,6 @@ export function SignInGateProvider({ children }: { children: ReactNode }) {
         setIsGateOpen(true);
       }
     }
-  }, [isAuthenticated]);
-
-  // Show dismissible sign-in prompt on every app visit for unauthenticated users.
-  // Delayed by 4s so the onboarding tour shows first.
-  useEffect(() => {
-    if (isAuthenticated) return;
-
-    const timer = setTimeout(() => {
-      if (!isAuthenticated) {
-        setIsDismissible(true);
-        setIsGateOpen(true);
-      }
-    }, 4000);
-
-    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount only
 

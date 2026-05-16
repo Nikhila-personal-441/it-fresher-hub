@@ -261,14 +261,6 @@ export function PaywallModal({
         <DialogContent className="max-w-md p-0 overflow-hidden border-2 border-amber-400/30 bg-card" data-ocid="paywall-modal">
           {/* Header */}
           <div className="relative bg-gradient-to-br from-amber-400/20 via-primary/15 to-secondary/20 px-6 pt-7 pb-6 text-center">
-            {/* Close Button */}
-            <button
-              onClick={() => onOpenChange(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground transition-smooth z-20"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
             <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-400/20 border-2 border-amber-400/40 mb-4 mx-auto">
               {step === "success" ? <CheckCircle2 className="w-8 h-8 text-green-500" /> : <Sparkles className="w-8 h-8 text-amber-500" />}
             </motion.div>
@@ -394,7 +386,7 @@ export function PaywallModal({
                   data-ocid="btn-subscribe-now"
                 >
                   {(isLoading || isFetchingUrl) ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                  Pay ₹{Math.max(0, Math.floor((paymentPlan === "bundle_paths" ? BUNDLE_PATHS_PRICE : paymentPlan === "bundle_pro" ? BUNDLE_PRO_PRICE : paymentPlan === "bundle_all" ? BUNDLE_ALL_PRICE : (paymentPlan === "capstone" ? CAPSTONE_PRICE_INR : paymentPlan.startsWith("path_") ? PATH_PRICE_INR : PRICE_INR)) * (1 - discountPercent / 100)))} · Get Access
+                  Upgrade Now · Unlock Full Access
                   <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-60" />
                 </Button>
 
@@ -412,7 +404,7 @@ export function PaywallModal({
               <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
                 <p className="text-xs text-foreground font-medium mb-1">💳 Complete payment in Razorpay</p>
                 <p className="text-xs text-muted-foreground leading-snug">
-                  Complete your ₹{Math.max(0, Math.floor((paymentPlan === "capstone" ? CAPSTONE_PRICE_INR : paymentPlan.startsWith("path_") ? PATH_PRICE_INR : PRICE_INR) * (1 - discountPercent / 100)))} payment on Razorpay.
+                  Complete your payment on Razorpay secure checkout.
                   After successful payment, we’ll verify it automatically and unlock your content instantly.
                 </p>
               </div>

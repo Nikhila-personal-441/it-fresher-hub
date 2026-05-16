@@ -129,19 +129,19 @@ function statusBadge(status: string) {
 
 function planBadge(plan: string) {
   if (plan === "bundle_paths") {
-    return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Paths ₹249</Badge>;
+    return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Core Bundle</Badge>;
   }
   if (plan === "bundle_pro") {
-    return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">Pro ₹549</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">Pro Bundle</Badge>;
   }
   if (plan === "bundle_all") {
-    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Master ₹749</Badge>;
+    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Master Bundle</Badge>;
   }
   if (plan === "premium" || plan === "base") {
-    return <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/30 text-xs">Base ₹99</Badge>;
+    return <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/30 text-xs">Base Plan</Badge>;
   }
   if (plan === "capstone" || plan === "base+capstone") {
-    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Capstone ₹499</Badge>;
+    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Capstone Plan</Badge>;
   }
   if (plan.startsWith("path_")) {
     return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Single Path</Badge>;

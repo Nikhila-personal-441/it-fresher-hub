@@ -631,8 +631,7 @@ export default function ModuleDetail() {
               </Badge>
               {!isSubscribed && !isAdmin && (
                 <Badge className="text-xs gap-1 bg-amber-400/15 text-amber-600 border-amber-400/30">
-                  <Crown className="w-3 h-3" />2 free ·{" "}
-                  {Math.max(0, lessons.length - 2)} premium
+                  <Crown className="w-3 h-3" />Premium Content
                 </Badge>
               )}
             </div>
@@ -821,7 +820,7 @@ export default function ModuleDetail() {
                 Upgrade to Premium
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                ₹199 lifetime · Unlock all {lessons.length} lessons
+                Unlock all {lessons.length} lessons in this module
               </p>
             </motion.button>
           )}

@@ -3,16 +3,20 @@ import { useAllDiscountAccess, useUpdateUserDiscountAccess } from "@/hooks/useCo
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Tag } from "lucide-react";
-import { motion } from "motion/react";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Tag, Users, Sparkles, ShieldCheck } from "lucide-react";
 
 export function AdminCouponsTab() {
   const { data: users, isLoading: usersLoading } = useAdminUsers();
   const { data: discounts, isLoading: discountsLoading } = useAllDiscountAccess();
   const { mutateAsync: updateDiscount } = useUpdateUserDiscountAccess();
   const [searchTerm, setSearchTerm] = useState("");
+
+  const stats = {
+    total: discounts?.length ?? 0,
+    admin: discounts?.filter(d => d.discount_100).length ?? 0,
+    partial: discounts?.filter(d => d.discount_25 || d.discount_50 || d.discount_75).length ?? 0
+  };
 
   if (usersLoading || discountsLoading) {
     return (
@@ -31,8 +35,37 @@ export function AdminCouponsTab() {
   );
 
   return (
-    <Card className="border-border">
-      <CardContent className="p-0">
+    <div className="space-y-6">
+      {/* Promotion Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card border border-border p-4 rounded-xl">
+          <div className="flex items-center gap-3 mb-1">
+            <Tag className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Active Offers</span>
+          </div>
+          <p className="text-2xl font-display font-bold text-foreground">{stats.total}</p>
+          <p className="text-[10px] text-muted-foreground">User-specific discounts active</p>
+        </div>
+        <div className="bg-card border border-border p-4 rounded-xl">
+          <div className="flex items-center gap-3 mb-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Beta/Admin Access</span>
+          </div>
+          <p className="text-2xl font-display font-bold text-foreground">{stats.admin}</p>
+          <p className="text-[10px] text-muted-foreground">Users with 100% OFF</p>
+        </div>
+        <div className="bg-card border border-border p-4 rounded-xl">
+          <div className="flex items-center gap-3 mb-1">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Partial Offers</span>
+          </div>
+          <p className="text-2xl font-display font-bold text-foreground">{stats.partial}</p>
+          <p className="text-[10px] text-muted-foreground">Users with 25-75% discount</p>
+        </div>
+      </div>
+
+      <Card className="border-border">
+        <CardContent className="p-0">
         <div className="p-4 border-b border-border bg-muted/30">
           <Input
             placeholder="Search users by name or email..."
@@ -112,5 +145,6 @@ export function AdminCouponsTab() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
