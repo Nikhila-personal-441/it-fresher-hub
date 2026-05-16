@@ -11,6 +11,9 @@ import {
   CAPSTONE_PRICE_INR,
   PATH_PRICE_INR,
   PRICE_INR,
+  BUNDLE_PATHS_PRICE,
+  BUNDLE_PRO_PRICE,
+  BUNDLE_ALL_PRICE,
   useSubscription,
 } from "@/hooks/useSubscription";
 import { LEARNING_PATHS } from "@/data/paths";
