@@ -307,14 +307,14 @@ export function SignInPromptModal() {
         <div className="flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-xl px-4 py-3">
           <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
           <p className="text-xs text-muted-foreground text-left">
-            Secured by{" "}
-            <span className="font-semibold text-foreground">Firebase Authentication</span>
-            {" "}— your password is securely hashed and never stored in plain text.
+            Your account is secured with{" "}
+            <span className="font-semibold text-foreground">Industry-Standard Encryption</span>
+            {" "}— your credentials are always protected and never stored in plain text.
           </p>
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Free forever · No credit card required
+          Join 1000+ freshers starting their IT journey
         </p>
       </div>
     </div>
