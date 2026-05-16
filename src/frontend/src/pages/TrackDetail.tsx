@@ -271,10 +271,10 @@ export default function TrackDetail() {
               <div className="bg-background border border-border p-6 rounded-2xl shadow-xl">
                 {!isEnrolled ? (
                   <>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Enrollment Fee</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Path Access</p>
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-3xl font-display font-bold text-foreground">₹{path.priceINR}</span>
-                      <span className="text-sm text-muted-foreground line-through opacity-50">₹499</span>
+                      <span className="text-3xl font-display font-bold text-foreground">Premium</span>
+                      <span className="text-sm text-muted-foreground opacity-50">Career Track</span>
                     </div>
                     <ul className="space-y-2 mb-6">
                       {["Full Path Access", "Path Certification Exam", "Verified Certificate", "Professional Badge"].map((f) => (

@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, Sparkles, Star, Trophy, Users, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TOUR_KEY = "onboarding_tour_seen_v4";
 
@@ -66,14 +67,19 @@ const TOUR_SLIDES = [
 export function OnboardingTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
-
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
-    const hasSeen = localStorage.getItem(TOUR_KEY);
+    // For guests (not authenticated), we show it on every fresh app load/refresh 
+    // unless seen in THIS session (sessionStorage).
+    // For authenticated users, we use persistent localStorage.
+    const storage = isAuthenticated ? localStorage : sessionStorage;
+    const hasSeen = storage.getItem(TOUR_KEY);
+
     if (!hasSeen) {
       const timer = setTimeout(() => setOpen(true), 1200);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleNext = () => {
     if (step < TOUR_SLIDES.length - 1) {
@@ -84,7 +90,8 @@ export function OnboardingTour() {
   };
 
   const handleComplete = () => {
-    localStorage.setItem(TOUR_KEY, "true");
+    const storage = isAuthenticated ? localStorage : sessionStorage;
+    storage.setItem(TOUR_KEY, "true");
     setOpen(false);
   };
 

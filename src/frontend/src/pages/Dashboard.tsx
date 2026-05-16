@@ -274,14 +274,15 @@ export default function Dashboard() {
             <h1 className="font-display font-bold text-2xl sm:text-3xl text-foreground leading-tight">
               Ready to Level Up Today? 🚀
             </h1>
-            <p className="text-muted-foreground text-sm max-w-xl">
-              You're on a{" "}
-              <span className="font-semibold text-foreground">
-                {progress?.streakDays ?? 0}-day streak
-              </span>
-              . Keep the momentum — complete a module today to stay
-              corporate-ready.
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20 font-bold gap-1 px-3 py-1">
+                <Crown className="w-3.5 h-3.5" />
+                {planName}
+              </Badge>
+              <p className="text-muted-foreground text-sm">
+                You're on a <span className="font-semibold text-foreground">{progress?.streakDays ?? 0}-day streak</span>.
+              </p>
+            </div>
           </div>
           <div className="flex flex-col items-center bg-muted/40 rounded-xl px-6 py-4 min-w-[140px] border border-border">
             <div className="flex items-center gap-1 mb-1">

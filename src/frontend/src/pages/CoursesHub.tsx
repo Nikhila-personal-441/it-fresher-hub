@@ -108,19 +108,21 @@ const EXCLUDED_CATEGORIES = new Set<ModuleCategory>([
 function CourseCard({
   module,
   index,
-  isSubscribed,
   userId,
   completedModuleIds,
+  sub,
+  isAdmin,
 }: {
   module: ITModule;
   index: number;
-  isSubscribed: boolean;
-  onUpgrade?: () => void;
   userId: string;
   completedModuleIds: Set<string>;
+  sub: any;
+  isAdmin: boolean;
 }) {
   const isFeatured = FEATURED_IDS.has(module.id);
   const categoryColor = getCategoryColor(module.category);
+  const { canAccessModule } = useSubscription();
 
   // Backend completedModules wins; fall back to localStorage
   const isCompletedByBackend = completedModuleIds.has(module.id);
@@ -138,6 +140,7 @@ function CourseCard({
 
   const isCompleted = savedPct >= 100;
   const hasProgress = savedPct > 0;
+  const hasModuleAccess = canAccessModule(module.id, 1, sub, isAdmin);
 
   // Determine button state
   type BtnState = "start" | "continue" | "completed";
@@ -207,7 +210,7 @@ function CourseCard({
             )}
           </div>
           <div className="flex gap-1">
-            {isSubscribed ? (
+            {hasModuleAccess ? (
               <span className="badge-free text-[10px]">✓ Unlocked</span>
             ) : (
               <span className="badge-free text-[10px]">1st Free</span>
@@ -629,7 +632,6 @@ export default function CoursesHub() {
                       <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-3xl">
                         {path.icon}
                       </div>
-                      <Badge variant="outline" className="border-secondary text-secondary font-bold">₹{path.priceINR}</Badge>
                     </div>
                     <h3 className="font-display font-bold text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
                       {path.title}
@@ -670,7 +672,8 @@ export default function CoursesHub() {
                   key={module.id}
                   module={module}
                   index={i}
-                  isSubscribed={hasAccess}
+                  sub={subscriptionData}
+                  isAdmin={isAdmin}
                   onUpgrade={() => setPaywallOpen(true)}
                   userId={userId}
                   completedModuleIds={completedModuleIds}
@@ -710,7 +713,7 @@ export default function CoursesHub() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Lock className="w-3 h-3" />
-                Requires ₹199 subscription after first module
+                Upgrade to unlock all modules in this path
               </span>
             </div>
           )}

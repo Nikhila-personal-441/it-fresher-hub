@@ -66,6 +66,8 @@ interface UseSubscriptionReturn {
   /** Error message from last payment attempt */
   paymentError: string | null;
   clearPaymentError: () => void;
+  /** Human readable plan name for UI */
+  planName: string;
 }
 
 function computeExpiresAt(activatedAt: string): string {
@@ -127,26 +129,47 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
-/** Free access: first module only */
+/** 
+ * Detailed access check based on plan.
+ * @param moduleId Module being accessed
+ * @param moduleIndex Index within its category (0 = free)
+ * @param sub User's subscription data
+ * @param isAdmin Admin bypass
+ */
 export function canAccessModule(
+  moduleId: string,
   moduleIndex: number,
-  isSubscribed: boolean,
+  sub: SubscriptionData,
   isAdmin?: boolean,
 ): boolean {
   if (isAdmin) return true;
-  if (moduleIndex === 0) return true;
-  return isSubscribed;
+  if (moduleIndex === 0) return true; // First module always free
+  if (!sub.active) return false;
+
+  const plan = sub.plan;
+  if (plan === "premium" || plan === "bundle_all") return true;
+  if (plan === "bundle_paths") return true; 
+
+  const { getPathForModule } = require("@/data/paths");
+  const path = getPathForModule(moduleId);
+  if (path) {
+    if (Array.isArray(plan)) return plan.includes(path.id);
+    return plan === path.id;
+  }
+
+  return false;
 }
 
 /** Lesson-level access: first 2 lessons free */
 export function canAccessLesson(
+  moduleId: string,
   lessonIndex: number,
-  isSubscribed: boolean,
+  sub: SubscriptionData,
   isAdmin?: boolean,
 ): boolean {
   if (isAdmin) return true;
   if (lessonIndex < 2) return true;
-  return isSubscribed;
+  return canAccessModule(moduleId, 1, sub, isAdmin);
 }
 
 export function useSubscription(): UseSubscriptionReturn {
@@ -420,6 +443,21 @@ export function useSubscription(): UseSubscriptionReturn {
 
   const daysRemaining = computeDaysRemaining(subscriptionData.expiresAt);
   const effectiveIsSubscribed = isAdmin || subscriptionData.active;
+  const planName = (() => {
+    if (isAdmin) return "Platform Admin 💎";
+    if (!subscriptionData.active || subscriptionData.plan === "free") return "Free Learner";
+    const plan = subscriptionData.plan;
+    if (plan === "premium" || plan === "bundle_all") return "Premium Bundle";
+    if (plan === "bundle_paths") return "Learning Paths Bundle";
+    if (plan === "bundle_pro") return "Pro Career Bundle";
+    if (plan === "capstone") return "Capstone Project Only";
+    if (typeof plan === "string" && plan.startsWith("path_")) {
+      const { LEARNING_PATHS } = require("@/data/paths");
+      const p = LEARNING_PATHS.find((lp: any) => lp.id === plan);
+      return p ? `${p.title} Plan` : "Path Access";
+    }
+    return "Custom Plan";
+  })();
 
   return {
     isSubscribed: effectiveIsSubscribed,
@@ -429,12 +467,14 @@ export function useSubscription(): UseSubscriptionReturn {
     daysRemaining,
     initiateCheckout,
     initiateCapstoneCheckout,
+    initiatePathCheckout,
     refreshSubscription,
     showSignInForUpgrade,
     dismissSignInForUpgrade,
     proceedAfterSignIn,
     paymentError,
     clearPaymentError,
+    planName,
   };
 }
 

@@ -437,7 +437,7 @@ export default function ModuleDetail() {
   const handleLessonSelect = (index: number) => {
     const unlocked = isUnlocked(index);
     if (!unlocked) return;
-    const accessible = canAccessLesson(index, isSubscribed, isAdmin);
+    const accessible = canAccessLesson(moduleId, index, subscriptionData, isAdmin);
     if (!accessible) {
       openPaywall(lessons[index]?.title ?? "");
       return;
