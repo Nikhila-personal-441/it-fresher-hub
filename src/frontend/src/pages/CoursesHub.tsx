@@ -34,7 +34,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   {
     key: "tracks",
-    label: "Certification Paths",
+    label: "Learning Paths",
     icon: "🚀",
     categories: [],
   },
@@ -100,7 +100,6 @@ const CheckIcon = Check;
 // Courses excluded from the skills hub (shown on dedicated pages)
 const EXCLUDED_CATEGORIES = new Set<ModuleCategory>([
   "mncplatforms",
-  "etltools",
   "capstone",
 ]);
 
@@ -358,7 +357,7 @@ function CardSkeleton() {
 
 export default function CoursesHub() {
   const search = useSearch({ from: "/courses" });
-  const initialCat = (search as { category?: string }).category ?? "all";
+  const initialCat = (search as { category?: string }).category ?? "tracks";
   const [activeTab, setActiveTab] = useState<string>(initialCat);
   const [searchQuery, setSearchQuery] = useState("");
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -553,33 +552,57 @@ export default function CoursesHub() {
             </span>
           </div>
 
-          {/* Category tabs */}
-          <div
-            className="flex flex-wrap gap-2"
-            role="tablist"
-            aria-label="Course categories"
-          >
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActiveTab(tab.key)}
-                  data-ocid={`tab-${tab.key}`}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium border transition-all duration-150 ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground hover:bg-primary/5"
-                  }`}
-                >
-                  <span>{tab.icon}</span>
-                  {tab.label}
-                </button>
-              );
-            })}
+          {/* Views vs Filters */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">View Mode</span>
+              <div className="flex flex-wrap gap-2">
+                {TABS.slice(0, 2).map((tab) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key)}
+                      data-ocid={`tab-${tab.key}`}
+                      className={`flex items-center gap-1.5 px-5 py-2.5 rounded-2xl text-xs font-bold border transition-all duration-200 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105"
+                          : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                      }`}
+                    >
+                      <span>{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Filter by Category</span>
+              <div className="flex flex-wrap gap-2">
+                {TABS.slice(2).map((tab) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key)}
+                      data-ocid={`tab-${tab.key}`}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium border transition-all duration-150 ${
+                        isActive
+                          ? "bg-secondary text-secondary-foreground border-secondary shadow-md"
+                          : "bg-card text-muted-foreground border-border hover:border-secondary/40 hover:text-foreground hover:bg-secondary/5"
+                      }`}
+                    >
+                      <span>{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Grid */}

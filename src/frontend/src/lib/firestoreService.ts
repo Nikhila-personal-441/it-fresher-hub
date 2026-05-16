@@ -55,7 +55,10 @@ export async function updateUserLogin(uid: string) {
       isActive: true,
     });
   }
+  // Also update the streak in progress doc on every login
+  await saveProgress(uid, {});
 }
+
 
 export async function getUserDoc(uid: string): Promise<UserDoc | null> {
   const snap = await getDoc(doc(db, "users", uid));
@@ -130,10 +133,11 @@ function computeStreak(prev: { streakDays?: number; streakLastDate?: string }): 
     return { streakDays: prev.streakDays ?? 1, streakLastDate: todayStr };
   }
 
+  // Calculate calendar days difference
   const lastDate = new Date(prev.streakLastDate + "T00:00:00");
-  const diffDays = Math.floor(
-    (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const currentDate = new Date(todayStr + "T00:00:00");
+  const diffTime = currentDate.getTime() - lastDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 1) {
     // Consecutive day — increment

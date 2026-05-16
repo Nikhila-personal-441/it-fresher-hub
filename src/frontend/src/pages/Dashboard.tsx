@@ -466,64 +466,83 @@ export default function Dashboard() {
         </motion.div>
       ) : (
         <>
-          {/* ── Quick Access Links ─────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-xl text-foreground">
-                Quick Access
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                Jump right in
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {QUICK_LINKS.map((link, i) => (
-                <motion.div
-                  key={link.to}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.06, duration: 0.35 }}
-                >
-                  <Link to={link.to} data-ocid={link.ocid}>
-                    <div
-                      className={`border rounded-xl p-3.5 flex flex-col items-center text-center gap-2 cursor-pointer hover:shadow-md transition-smooth hover:-translate-y-0.5 ${link.accentClass}`}
-                    >
-                      <link.icon className="w-5 h-5" />
-                      <div>
-                        <p className="text-xs font-bold leading-tight">
-                          {link.label}
-                        </p>
-                        <p className="text-[10px] opacity-70 leading-snug mt-0.5 line-clamp-2">
-                          {link.description}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
           {/* ── Main Content Grid ─────────────────────────── */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 pt-2">
             {/* Left column */}
-            <div className="xl:col-span-2 space-y-6">
+            <div className="xl:col-span-2 space-y-8">
+              {/* Specialized Learning Paths (Tracks) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-secondary" />
+                    <h2 className="font-display font-bold text-xl text-foreground">
+                      Learning Paths
+                    </h2>
+                  </div>
+                  <Link to="/courses" search={{ category: "tracks" }} className="text-xs text-secondary hover:underline font-medium">
+                    View all paths
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {LEARNING_PATHS.map((path) => {
+                    const pathModules = getPathModules(path.id);
+                    const completedInPath = pathModules.filter(m => completedSet.has(m.id)).length;
+                    const pathProgress = Math.round((completedInPath / pathModules.length) * 100);
+                    
+                    return (
+                      <Link 
+                        key={path.id} 
+                        to="/tracks/$id" 
+                        params={{ id: path.id }}
+                        className="bg-card border border-border rounded-2xl p-5 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-secondary/5 rounded-full -mr-12 -mt-12 blur-2xl" />
+                        <div className="flex items-center gap-4 mb-4 relative z-10">
+                          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            {path.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-sm text-foreground group-hover:text-secondary transition-colors truncate">
+                              {path.title}
+                            </h3>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                              {pathModules.length} Modules · Professional Path
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-2 relative z-10">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-muted-foreground font-medium">Track Completion</span>
+                            <span className="font-bold text-secondary">{pathProgress}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pathProgress}%` }}
+                              className="h-full bg-secondary shadow-[0_0_8px_oklch(var(--secondary)/0.3)]" 
+                              transition={{ duration: 1, ease: "easeOut" }}
+                            />
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Continue Learning */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-display font-bold text-xl text-foreground">
+                  <h2 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
                     Continue Learning
                   </h2>
                   <Link to="/modules">
                     <Button
                       variant="ghost"
                       size="sm"
-                      data-ocid="cta-view-all-modules"
-                      className="gap-1 text-primary"
+                      className="gap-1 text-primary text-xs"
                     >
                       All Courses <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
@@ -538,24 +557,14 @@ export default function Dashboard() {
                 ) : inProgressModules.length === 0 ? (
                   <div
                     className="border border-dashed border-border rounded-xl p-8 text-center space-y-2"
-                    data-ocid="empty-continue-learning"
                   >
                     <BookOpen className="w-8 h-8 text-muted-foreground mx-auto" />
                     <p className="font-medium text-foreground">
                       No courses started yet
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Pick a course below and start your IT journey!
+                      Start a Track above or browse individual courses.
                     </p>
-                    <Link to="/modules">
-                      <Button
-                        size="sm"
-                        className="btn-primary mt-2"
-                        data-ocid="cta-browse-courses"
-                      >
-                        Browse Courses
-                      </Button>
-                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -573,7 +582,6 @@ export default function Dashboard() {
                           <Link
                             to="/modules/$id"
                             params={{ id: mod.id }}
-                            data-ocid={`continue-module-${mod.id}`}
                           >
                             <div className="flex items-center gap-4 bg-card border border-border rounded-xl p-4 hover:shadow-md transition-smooth hover:border-primary/30 cursor-pointer group">
                               <div className="text-3xl shrink-0">
@@ -597,15 +605,6 @@ export default function Dashboard() {
                                   }
                                   height="h-1.5"
                                 />
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {formatMinutes(mod.estimatedMinutes)}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {mod.topics?.length ?? 0} topics
-                                  </span>
-                                </div>
                               </div>
                               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                             </div>
@@ -616,64 +615,6 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-
-                    {/* Certification Paths Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Trophy className="w-5 h-5 text-secondary" />
-                          <h2 className="font-display font-bold text-xl text-foreground">
-                            Certification Paths
-                          </h2>
-                        </div>
-                        <Link to="/courses" search={{ category: "tracks" }} className="text-xs text-secondary hover:underline font-medium">
-                          View all paths
-                        </Link>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {LEARNING_PATHS.slice(0, 2).map((path) => {
-                          const pathModules = getPathModules(path.id);
-                          const completedInPath = pathModules.filter(m => completedSet.has(m.id)).length;
-                          const pathProgress = Math.round((completedInPath / pathModules.length) * 100);
-                          
-                          return (
-                            <Link 
-                              key={path.id} 
-                              to="/tracks/$id" 
-                              params={{ id: path.id }}
-                              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all duration-300 group"
-                            >
-                              <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                  {path.icon}
-                                </div>
-                                <div className="min-w-0">
-                                  <h3 className="font-bold text-sm text-foreground group-hover:text-secondary transition-colors truncate">
-                                    {path.title}
-                                  </h3>
-                                  <p className="text-[10px] text-muted-foreground">
-                                    {pathModules.length} Modules · Path Certification
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <span className="text-muted-foreground">Path Progress</span>
-                                  <span className="font-bold text-secondary">{pathProgress}%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-secondary transition-all duration-500" 
-                                    style={{ width: `${pathProgress}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
 
               {/* Featured This Week */}
               <div className="space-y-4">

@@ -1015,7 +1015,6 @@ export function useQuizQuestions() {
   return useQuery<QuizQuestion[]>({
     queryKey: ["quiz-questions"],
     queryFn: async () => {
-      // Wire to actor.listQuizQuestions() when backend is ready
       await new Promise((r) => setTimeout(r, 300));
       return MOCK_QUESTIONS;
     },
@@ -1023,10 +1022,44 @@ export function useQuizQuestions() {
   });
 }
 
+// ── Path-specific question banks ─────────────────────────────────────────────
+
+/** Maps each learning path ID to the question categories it should draw from */
+const PATH_CATEGORY_MAP: Record<string, string[]> = {
+  path_it_fundamentals: ["fundamentals", "networking", "security"],
+  path_programming:     ["coding", "devops"],
+  path_data_ai:         ["ai_ml", "fundamentals", "coding"],
+  path_cloud_devops:    ["cloud", "devops", "networking"],
+  path_etl:             ["fundamentals", "coding", "cloud"],
+  path_misc:            ["corporate"],
+};
+
+/** Returns up to 15 shuffled questions for a given path and mode */
+export function getPathQuizQuestions(pathId: string, mode: "practice" | "main" = "main"): QuizQuestion[] {
+  const cats = PATH_CATEGORY_MAP[pathId] ?? [];
+  let filtered = MOCK_QUESTIONS.filter((q) => cats.includes(q.category));
+
+  if (mode === "practice") {
+    // Practice: focus on easy questions
+    filtered = filtered.filter((q) => q.difficulty === "easy");
+  } else {
+    // Main: focus on medium/hard questions
+    filtered = filtered.filter((q) => q.difficulty === "medium" || q.difficulty === "hard");
+  }
+
+  // If we don't have enough specific difficulty questions, fall back to any in category
+  if (filtered.length < 5) {
+    filtered = MOCK_QUESTIONS.filter((q) => cats.includes(q.category));
+  }
+
+  // Random shuffle for variety
+  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 15);
+}
+
 export function useSubmitQuiz() {
   return useMutation({
     mutationFn: async (attempts: QuizAttempt[]): Promise<QuizResult> => {
-      // Wire to actor.submitQuizAttempt(attempts) when backend is ready
       await new Promise((r) => setTimeout(r, 600));
       const correct = attempts.filter((a) => a.isCorrect).length;
       const result: QuizResult = {
@@ -1046,7 +1079,6 @@ export function useMyQuizAttempt() {
   return useQuery<QuizResult | null>({
     queryKey: ["my-quiz-attempt"],
     queryFn: async () => {
-      // Wire to actor.getMyQuizAttempt() when backend is ready
       return null;
     },
     staleTime: 1000 * 60,

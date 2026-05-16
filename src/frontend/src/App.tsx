@@ -28,7 +28,6 @@ const CorporateWorldSection = lazy(
   () => import("@/pages/CorporateWorldSection"),
 );
 const MncPlatforms = lazy(() => import("@/pages/MncPlatforms"));
-const EtlTools = lazy(() => import("@/pages/EtlTools"));
 const CapstoneProject = lazy(() => import("@/pages/CapstoneProject"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const Certificates = lazy(() => import("@/pages/Certificates"));
@@ -135,11 +134,6 @@ const mncPlatformsRoute = createRoute({
   path: "/mnc-platforms",
   component: MncPlatforms,
 });
-const etlToolsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/etl-tools",
-  component: EtlTools,
-});
 const capstoneProjectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/capstone-project",
@@ -185,7 +179,6 @@ const routeTree = rootRoute.addChildren([
   corporateWorldRoute,
   corporateWorldSectionRoute,
   mncPlatformsRoute,
-  etlToolsRoute,
   capstoneProjectRoute,
   glossaryRoute,
   quizRoute,

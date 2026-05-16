@@ -146,12 +146,13 @@ export function PaywallModal({
       setIsFetchingUrl(true);
       setStep("processing");
 
-      const baseAmount =
-        plan === "capstone"
-          ? CAPSTONE_PRICE_INR
-          : plan.startsWith("path_")
-          ? PATH_PRICE_INR
-          : PRICE_INR;
+      let baseAmount = 0;
+      if (plan === "bundle_paths") baseAmount = BUNDLE_PATHS_PRICE;
+      else if (plan === "bundle_pro") baseAmount = BUNDLE_PRO_PRICE;
+      else if (plan === "bundle_all") baseAmount = BUNDLE_ALL_PRICE;
+      else if (plan === "capstone") baseAmount = CAPSTONE_PRICE_INR;
+      else if (plan.startsWith("path_")) baseAmount = PATH_PRICE_INR;
+      else baseAmount = PRICE_INR;
       
       const amount = Math.max(0, Math.floor(baseAmount * (1 - discountPercent / 100)));
 
@@ -260,13 +261,13 @@ export function PaywallModal({
             {/* Close Button */}
             <button
               onClick={() => onOpenChange(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-foreground/5 hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-smooth z-20"
+              className="absolute top-4 right-4 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground transition-smooth z-20"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
             <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-400/20 border-2 border-amber-400/40 mb-4 mx-auto">
-              {step === "success" ? <CheckCircle2 className="w-8 h-8 text-green-500" /> : <Lock className="w-8 h-8 text-amber-500" />}
+              {step === "success" ? <CheckCircle2 className="w-8 h-8 text-green-500" /> : <Sparkles className="w-8 h-8 text-amber-500" />}
             </motion.div>
             <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="w-4 h-4 text-amber-500" />
@@ -275,12 +276,12 @@ export function PaywallModal({
             <DialogTitle className="font-display font-bold text-xl text-foreground leading-tight">
               {step === "success" ? "Payment Verified! 🎉" : lessonTitle ? (
                 <>Unlock <span className="text-primary">&ldquo;{lessonTitle}&rdquo;</span></>
-              ) : "Unlock Premium Access"}
+              ) : "Upgrade Your Career"}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm mt-2 leading-relaxed">
               {step === "success"
                 ? "Your premium access has been activated. Enjoy all courses!"
-                : "First module of each course is always free. Upgrade to unlock everything!"}
+                : "Choose a career bundle to unlock premium tracks and certificates."}
             </DialogDescription>
           </div>
 
@@ -303,78 +304,54 @@ export function PaywallModal({
           {/* ─── Step: Choose plan ─── */}
           {step === "choose" && (
             <>
-              {/* 3-Tier Pricing Grid */}
+              {/* Bundle Pricing Grid */}
               <div className="px-6 py-4 grid grid-cols-1 gap-3">
-                {/* Tier 1: Basic */}
+                {/* Bundle 1: Core Paths */}
                 <div 
-                  onClick={() => setPaymentPlan("premium")}
+                  onClick={() => setPaymentPlan("bundle_paths")}
                   className={`cursor-pointer p-4 rounded-xl border-2 transition-smooth ${
-                    paymentPlan === "premium" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                    paymentPlan === "bundle_paths" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <Badge variant="outline" className="text-[10px]">Tier 1 — Basic</Badge>
-                    <span className="font-display font-bold text-lg">₹{PRICE_INR}</span>
+                    <Badge variant="outline" className="text-[10px] border-primary text-primary font-bold">CORE BUNDLE</Badge>
+                    <span className="font-display font-bold text-lg">₹{BUNDLE_PATHS_PRICE}</span>
                   </div>
-                  <h3 className="font-bold text-sm mb-1">Lifetime Course Access</h3>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Full access to all 27 courses & lessons. No certificates.</p>
+                  <h3 className="font-bold text-sm mb-1">All 6 Learning Paths</h3>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Full access to IT Fundamentals, Programming, Data & AI, Cloud, ETL, and Soft Skills + Exam + Path Certificates.</p>
                 </div>
 
-                {/* Tier 2: Paths */}
+                {/* Bundle 2: Pro (Paths + Capstone) */}
                 <div 
-                  onClick={() => setPaymentPlan("path_it_fundamentals")}
-                  className={`cursor-pointer p-4 rounded-xl border-2 transition-smooth ${
-                    paymentPlan.startsWith("path_") ? "border-secondary bg-secondary/5" : "border-border hover:border-secondary/30"
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="outline" className="text-[10px] border-secondary text-secondary">Tier 2 — Path</Badge>
-                    <span className="font-display font-bold text-lg">₹{PATH_PRICE_INR}</span>
-                  </div>
-                  <h3 className="font-bold text-sm mb-1">Professional Certification</h3>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Course access + Path-specific exam + Verified Certificate.</p>
-                </div>
-
-                {/* Tier 3: Capstone */}
-                <div 
-                  onClick={() => setPaymentPlan("capstone")}
+                  onClick={() => setPaymentPlan("bundle_pro")}
                   className={`cursor-pointer p-4 rounded-xl border-2 transition-smooth relative overflow-hidden ${
-                    paymentPlan === "capstone" ? "border-[oklch(var(--capstone-accent))] bg-[oklch(var(--capstone-accent)/0.05)]" : "border-border hover:border-[oklch(var(--capstone-accent)/0.3)]"
+                    paymentPlan === "bundle_pro" ? "border-secondary bg-secondary/5" : "border-border hover:border-secondary/30"
                   }`}
                 >
-                  <div className="absolute top-0 right-0 bg-[oklch(var(--capstone-accent))] text-white text-[8px] font-bold py-1 px-4 rounded-bl-lg">POPULAR</div>
+                  <div className="absolute top-0 right-0 bg-secondary text-white text-[8px] font-bold py-1 px-4 rounded-bl-lg">POPULAR</div>
                   <div className="flex justify-between items-start mb-2">
-                    <Badge variant="outline" className="text-[10px] border-[oklch(var(--capstone-accent))] text-[oklch(var(--capstone-accent))]">Tier 3 — Master</Badge>
-                    <span className="font-display font-bold text-lg">₹{CAPSTONE_PRICE_INR}</span>
+                    <Badge variant="outline" className="text-[10px] border-secondary text-secondary font-bold">PRO BUNDLE</Badge>
+                    <span className="font-display font-bold text-lg">₹{BUNDLE_PRO_PRICE}</span>
                   </div>
-                  <h3 className="font-bold text-sm mb-1">Internship Certificate</h3>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Everything + 22-step Capstone Project + Ultimate Certificate.</p>
+                  <h3 className="font-bold text-sm mb-1">Paths + Capstone Project</h3>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Access to any 2 Paths + Full Capstone Project Track + Internship Certificate + Professional Guidance.</p>
+                </div>
+
+                {/* Bundle 3: Master (Everything) */}
+                <div 
+                  onClick={() => setPaymentPlan("bundle_all")}
+                  className={`cursor-pointer p-4 rounded-xl border-2 transition-smooth ${
+                    paymentPlan === "bundle_all" ? "border-[oklch(var(--capstone-accent))] bg-[oklch(var(--capstone-accent)/0.05)]" : "border-border hover:border-[oklch(var(--capstone-accent)/0.3)]"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="outline" className="text-[10px] border-[oklch(var(--capstone-accent))] text-[oklch(var(--capstone-accent))] font-bold">MASTER BUNDLE</Badge>
+                    <span className="font-display font-bold text-lg">₹{BUNDLE_ALL_PRICE}</span>
+                  </div>
+                  <h3 className="font-bold text-sm mb-1">Full Lifetime Access</h3>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Everything unlocked: All Paths, Capstone Project, MNC Platforms, Corporate Readiness, and all future updates.</p>
                 </div>
               </div>
-
-              {/* Path Selection (Visible only if Tier 2 is selected) */}
-              {paymentPlan.startsWith("path_") && (
-                <div className="mx-6 mb-4 p-4 rounded-xl bg-secondary/5 border border-secondary/20">
-                  <p className="text-xs font-bold text-secondary mb-3">Select your Certification Path:</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {LEARNING_PATHS.map((path) => (
-                      <button
-                        key={path.id}
-                        onClick={() => setPaymentPlan(path.id)}
-                        className={`text-left p-2 rounded-lg text-[10px] border transition-smooth flex items-center justify-between ${
-                          paymentPlan === path.id ? "bg-secondary text-white border-secondary" : "bg-card border-border hover:border-secondary/40"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="text-base">{path.icon}</span> 
-                          <span>{path.title}</span>
-                        </span>
-                        {paymentPlan === path.id && <CheckCircle2 className="w-3 h-3" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Coupon */}
               <div className="mx-6 mb-4">
@@ -384,7 +361,7 @@ export function PaywallModal({
                     placeholder="Coupon code"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 text-[10px] rounded-lg border border-border bg-background px-3 py-1.5"
+                    className="flex-1 text-[10px] rounded-lg border border-border bg-background px-3 py-1.5 focus:ring-1 focus:ring-primary outline-none"
                   />
                   <Button variant="outline" size="sm" className="h-8 text-[10px]" onClick={handleApplyCoupon}>Apply</Button>
                 </div>
@@ -395,7 +372,7 @@ export function PaywallModal({
               {/* CTA */}
               <div className="px-6 pb-6 space-y-3">
                 <div className="flex items-start gap-2.5">
-                  <Checkbox id="agree-terms" checked={agreed} onCheckedChange={(val) => setAgreed(!!val)} className="mt-0.5" />
+                  <Checkbox id="agree-terms" checked={agreed} onCheckedChange={(val) => setAgreed(!!val)} className="mt-0.5 border-muted-foreground/30" />
                   <label htmlFor="agree-terms" className="text-[10px] text-muted-foreground leading-snug cursor-pointer">
                     I agree to the content usage policy and understand that premium content is confidential.
                   </label>
@@ -403,9 +380,9 @@ export function PaywallModal({
 
                 <Button
                   className={`w-full gap-2 font-bold py-5 text-base rounded-xl shadow-lg disabled:opacity-50 transition-smooth ${
-                    paymentPlan === "capstone" 
+                    paymentPlan === "bundle_all" 
                       ? "bg-[oklch(var(--capstone-accent))] hover:bg-[oklch(var(--capstone-accent)/0.9)] text-white" 
-                      : paymentPlan.startsWith("path_")
+                      : paymentPlan === "bundle_pro"
                       ? "bg-secondary hover:bg-secondary/90 text-white"
                       : "bg-primary hover:bg-primary/90 text-primary-foreground"
                   }`}
@@ -414,13 +391,13 @@ export function PaywallModal({
                   data-ocid="btn-subscribe-now"
                 >
                   {(isLoading || isFetchingUrl) ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                  Pay ₹{Math.max(0, Math.floor((paymentPlan === "capstone" ? CAPSTONE_PRICE_INR : paymentPlan.startsWith("path_") ? PATH_PRICE_INR : PRICE_INR) * (1 - discountPercent / 100)))} · Get Started
+                  Pay ₹{Math.max(0, Math.floor((paymentPlan === "bundle_paths" ? BUNDLE_PATHS_PRICE : paymentPlan === "bundle_pro" ? BUNDLE_PRO_PRICE : paymentPlan === "bundle_all" ? BUNDLE_ALL_PRICE : (paymentPlan === "capstone" ? CAPSTONE_PRICE_INR : paymentPlan.startsWith("path_") ? PATH_PRICE_INR : PRICE_INR)) * (1 - discountPercent / 100)))} · Get Access
                   <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-60" />
                 </Button>
 
                 <Button variant="ghost" className="w-full text-[10px] h-auto text-muted-foreground hover:text-foreground" onClick={() => onOpenChange(false)}>Maybe later — stay on free plan</Button>
               </div>
-                <div className="text-center pt-1">
+                <div className="text-center pb-1">
                   <a href="mailto:itfreshershub@gmail.com?subject=IT%20Fresher%20Hub%20Support" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary hover:underline">Need help? Contact Support</a>
                 </div>
               </>

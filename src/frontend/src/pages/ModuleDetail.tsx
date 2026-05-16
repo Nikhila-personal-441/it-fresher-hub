@@ -20,6 +20,7 @@ import {
   downloadCertificateAsPdf,
   downloadInternCertificateAsPdf,
 } from "@/lib/pdfDownload";
+import { saveProgress } from "@/lib/firestoreService";
 import type { LessonProgress, ModuleLessonProgress } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useParams } from "@tanstack/react-router";
@@ -391,6 +392,10 @@ export default function ModuleDetail() {
       );
     } catch {
       // ignore
+    }
+    // Also persist to Firestore so Dashboard's "Continue Learning" reads real progress
+    if (pct > 0 && pct < 100) {
+      saveProgress(userId, { moduleProgress: { [moduleId]: pct } }).catch(() => {});
     }
   }, [userId, moduleId, completedLessonsCount, lessons.length]);
 

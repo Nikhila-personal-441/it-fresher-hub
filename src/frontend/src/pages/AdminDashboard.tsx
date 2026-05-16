@@ -128,23 +128,27 @@ function statusBadge(status: string) {
 }
 
 function planBadge(plan: string) {
-  if (plan === "premium") {
-    return (
-      <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/30 text-xs">
-        Base ₹199
-      </Badge>
-    );
+  if (plan === "bundle_paths") {
+    return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Paths ₹249</Badge>;
+  }
+  if (plan === "bundle_pro") {
+    return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">Pro ₹549</Badge>;
+  }
+  if (plan === "bundle_all") {
+    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Master ₹749</Badge>;
+  }
+  if (plan === "premium" || plan === "base") {
+    return <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/30 text-xs">Base ₹99</Badge>;
   }
   if (plan === "capstone" || plan === "base+capstone") {
-    return (
-      <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">
-        Base + Capstone
-      </Badge>
-    );
+    return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">Capstone ₹499</Badge>;
+  }
+  if (plan.startsWith("path_")) {
+    return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Single Path</Badge>;
   }
   return (
     <Badge className="bg-muted text-muted-foreground border-border text-xs">
-      None
+      {plan || "None"}
     </Badge>
   );
 }
@@ -718,15 +722,7 @@ export default function AdminDashboard() {
                               </code>
                             </td>
                             <td className="p-4">
-                              {record.plan === "capstone" ? (
-                                <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">
-                                  Capstone ₹499
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-purple-500/15 text-purple-400 border-purple-500/30 text-xs">
-                                  Base ₹199
-                                </Badge>
-                              )}
+                              {planBadge(record.plan)}
                             </td>
                             <td className="p-4">
                               <span className="text-sm font-bold text-green-400">

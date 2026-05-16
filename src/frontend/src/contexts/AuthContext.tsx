@@ -166,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user;
   const isAdmin =
     isAuthenticated &&
-    !!user?.email?.toLowerCase().startsWith("itfreshershub@gmail");
+    user?.email?.toLowerCase() === ADMIN_EMAIL;
 
   return (
     <AuthContext.Provider

@@ -30,6 +30,12 @@ const SUBSCRIPTION_KEY = "itfresherhub_subscription_v2";
 export const PRICE_INR = 99;
 export const PATH_PRICE_INR = 199;
 export const CAPSTONE_PRICE_INR = 499;
+
+// Bundle Pricing
+export const BUNDLE_PATHS_PRICE = 249; // All Learning Paths
+export const BUNDLE_PRO_PRICE = 549;   // 2 Paths + Capstone
+export const BUNDLE_ALL_PRICE = 749;   // Everything (All Paths + Capstone + MNC)
+
 /** Lifetime plan — no expiry */
 export const SUBSCRIPTION_DAYS = 36500;
 

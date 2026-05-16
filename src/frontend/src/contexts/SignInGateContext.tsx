@@ -52,6 +52,26 @@ export function SignInGateProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated]);
 
+  // Show dismissible sign-in prompt on first-ever app visit for unauthenticated users.
+  // Delayed by 4s so the onboarding tour shows first.
+  useEffect(() => {
+    if (isAuthenticated) return;
+    const alreadyPrompted = localStorage.getItem("signin_prompted_v1");
+    if (alreadyPrompted) return;
+
+    const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        localStorage.setItem("signin_prompted_v1", "true");
+        setIsDismissible(true);
+        setIsGateOpen(true);
+      }
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only
+
+
   // triggerSignInGate: used ONLY by the Upgrade/checkout flow (non-dismissible)
   // Do NOT call this from content clicks or page loads — only from PaywallModal subscribe button
   const triggerSignInGate = useCallback(() => {
